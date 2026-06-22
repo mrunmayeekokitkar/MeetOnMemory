@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import Navbar from "../components/Navbar.jsx";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {

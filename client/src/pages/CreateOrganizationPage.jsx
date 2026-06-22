@@ -1,7 +1,7 @@
 // client/src/pages/CreateOrganizationPage.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppContent } from "/src/context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Navbar from "/src/components/Navbar.jsx";

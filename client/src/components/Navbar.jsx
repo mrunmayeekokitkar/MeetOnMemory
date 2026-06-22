@@ -2,7 +2,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import { assets } from "../assets/assets.js";
 
 const Navbar = () => {

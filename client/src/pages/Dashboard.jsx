@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import {
   Building2,
   FileText,

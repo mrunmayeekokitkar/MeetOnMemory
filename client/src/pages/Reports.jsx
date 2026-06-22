@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import Navbar from "../components/Navbar.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
 import { Loader2, Brain, BarChart4, PieChart } from "lucide-react";

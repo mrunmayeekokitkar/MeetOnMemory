@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // ✅ <-- FIXED import
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";

@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedin, userData, isLoading } = useContext(AppContent);

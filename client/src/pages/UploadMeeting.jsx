@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Navbar from "../components/Navbar.jsx";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 
 const UploadMeeting = () => {
   const { backendUrl, userData } = useContext(AppContent);

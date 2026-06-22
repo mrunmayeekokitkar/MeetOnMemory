@@ -1,7 +1,7 @@
-import React, { use, useContext, useEffect } from 'react';
+import React, {useContext, useEffect } from 'react';
 import { assets } from '../assets/assets';
 import axios from 'axios';
-import { AppContent } from '../context/AppContext';
+import AppContent from "../context/AppContent";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 

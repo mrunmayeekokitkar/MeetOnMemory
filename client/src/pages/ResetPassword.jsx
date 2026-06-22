@@ -1,11 +1,11 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState } from 'react';
 // Changed to aliased path - assumes '@' is set to '/src'
-import { assets } from '../assets/assets'
-import { useNavigate } from 'react-router-dom'
+import { assets } from '../assets/assets';
+import { useNavigate } from 'react-router-dom';
 // Changed to aliased path - assumes '@' is set to '/src'
-import { AppContent } from '../context/AppContext' 
-import axios from 'axios'
-import { toast } from 'react-toastify'
+import AppContent from "../context/AppContent";
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const ResetPassword = () => {
 

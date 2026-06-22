@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useMemo } from "react";
 import Navbar from "../components/Navbar.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AppContent } from "../context/AppContext.jsx";
+import AppContent from "../context/AppContent";
 import {
   Upload,
   FileText,
