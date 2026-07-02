@@ -18,32 +18,38 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const openIssues = await github.rest.issues.listForRepo({
+            // 1. Paginate to fetch ALL open issues seamlessly
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner,
               repo,
               state: 'open',
               per_page: 100
             });
 
-            const issuesWithAssignees = openIssues.data.filter(issue => issue.assignees.length > 0 && !issue.pull_request);
-            const now = new Date();
+            const REMINDER_TEXT = "your claim has been inactive for 24 hours. Please provide an update within the next 24 hours, otherwise your claim will expire.";
 
-            for (const issue of issuesWithAssignees) {
-              const timeline = await github.rest.issues.listEventsForTimeline({
+            for (const issue of issues) {
+              if (!issue.assignees || issue.assignees.length === 0 || issue.pull_request) continue;
+              
+              // 2. Fetch all timeline events to ensure we evaluate the absolute newest activity
+              const timeline = await github.paginate(github.rest.issues.listEventsForTimeline, {
                 owner,
                 repo,
                 issue_number: issue.number,
-                per_page: 20
+                per_page: 100
               });
 
-              const lastEvent = timeline.data[timeline.data.length - 1];
-              if (!lastEvent) continue;
-
+              if (timeline.length === 0) continue;
+              
+              // Get the newest event chronologically
+              const lastEvent = timeline[timeline.length - 1];
               const lastActivityDate = new Date(lastEvent.created_at || issue.updated_at);
-              const hoursInactive = Math.abs(now - lastActivityDate) / 36e5;
+              const hoursInactive = (new Date() - lastActivityDate) / (1000 * 60 * 60);
+
               const currentAssignee = issue.assignees[0].login;
 
               if (hoursInactive >= 48) {
+                // Remove assignee due to expiration
                 await github.rest.issues.removeAssignees({
                   owner,
                   repo,
@@ -53,25 +59,27 @@ jobs:
 
                 await github.rest.issues.createComment({
                   owner,
-                  repo: context.repo.repo,
+                  repo,
                   issue_number: issue.number,
                   body: `❌ This claim has expired after 48 hours of inactivity. The issue is now available for anyone to claim.`
                 });
               } else if (hoursInactive >= 24) {
+                // Fetch comments to verify if we already posted the exact reminder
                 const comments = await github.rest.issues.listComments({
                   owner,
                   repo,
                   issue_number: issue.number
                 });
-                
-                const alreadyWarned = comments.data.some(c => c.body.includes("Your claim has been inactive for 24 hours"));
+
+                // 3. Match text verification cleanly to prevent hourly duplication
+                const alreadyWarned = comments.data.some(c => c.body.includes(REMINDER_TEXT));
 
                 if (!alreadyWarned) {
                   await github.rest.issues.createComment({
                     owner,
                     repo,
                     issue_number: issue.number,
-                    body: `⏰ @${currentAssignee}, your claim has been inactive for 24 hours. Please provide an update within the next 24 hours, otherwise your claim will expire.`
+                    body: `⏰ @${currentAssignee}, ${REMINDER_TEXT}`
                   });
                 }
               }
