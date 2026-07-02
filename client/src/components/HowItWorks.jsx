@@ -22,6 +22,7 @@ import {
 
 const HowItWorks = () => {
   const [activeStep, setActiveStep] = useState(0);
+  const [resetNonce, setResetNonce] = useState(0);
   const [simulationState, setSimulationState] = useState({
     orgName: "",
     orgCreated: false,
@@ -201,6 +202,7 @@ const HowItWorks = () => {
 
       const queryStr = "When is semantic search launching?";
       let charIdx = 0;
+      let resultTimeout;
       const typingInterval = setInterval(() => {
         if (charIdx < queryStr.length) {
           const nextChar = queryStr[charIdx];
@@ -211,7 +213,7 @@ const HowItWorks = () => {
           charIdx++;
         } else {
           clearInterval(typingInterval);
-          setTimeout(() => {
+          resultTimeout = setTimeout(() => {
             setSimulationState((prev) => ({
               ...prev,
               searchFinished: true,
@@ -235,7 +237,10 @@ const HowItWorks = () => {
           }, 400);
         }
       }, 70);
-      return () => clearInterval(typingInterval);
+      return () => {
+        clearInterval(typingInterval);
+        clearTimeout(resultTimeout);
+      };
     } else if (activeStep === 4) {
       // Step 5 reports simulation
       setSimulationState((prev) => ({
@@ -244,11 +249,11 @@ const HowItWorks = () => {
         generatingReport: false,
       }));
     }
-  }, [activeStep]);
+  }, [activeStep, resetNonce]);
 
   // Restart simulation helper
   const restartSimulation = () => {
-    setActiveStep(activeStep); // re-trigger useEffect
+    setResetNonce((n) => n + 1);
   };
 
   return (
@@ -681,7 +686,7 @@ const HowItWorks = () => {
                                     className="flex justify-between items-center gap-2 bg-slate-900/50 p-1 px-1.5 rounded"
                                   >
                                     <span className="truncate">{act.task}</span>
-                                    <span className="text-[9px] font-bold px-1 py-0.2 bg-violet-950 text-violet-300 rounded border border-violet-800/40 capitalize">
+                                    <span className="text-[9px] font-bold px-1 py-0.5 bg-violet-950 text-violet-300 rounded border border-violet-800/40 capitalize">
                                       {act.owner}
                                     </span>
                                   </li>
@@ -769,7 +774,7 @@ const HowItWorks = () => {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-white border border-gray-150 p-2.5 rounded-xl text-center">
+                      <div className="bg-white border border-gray-200 p-2.5 rounded-xl text-center">
                         <span className="text-[10px] text-gray-400 font-bold uppercase block">
                           Meetings
                         </span>
@@ -777,7 +782,7 @@ const HowItWorks = () => {
                           42
                         </span>
                       </div>
-                      <div className="bg-white border border-gray-150 p-2.5 rounded-xl text-center">
+                      <div className="bg-white border border-gray-200 p-2.5 rounded-xl text-center">
                         <span className="text-[10px] text-gray-400 font-bold uppercase block">
                           Hours
                         </span>
@@ -785,7 +790,7 @@ const HowItWorks = () => {
                           84h
                         </span>
                       </div>
-                      <div className="bg-white border border-gray-150 p-2.5 rounded-xl text-center">
+                      <div className="bg-white border border-gray-200 p-2.5 rounded-xl text-center">
                         <span className="text-[10px] text-gray-400 font-bold uppercase block">
                           Decisions
                         </span>
@@ -795,7 +800,7 @@ const HowItWorks = () => {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-gray-150 rounded-xl p-3.5 space-y-2">
+                    <div className="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2">
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide block">
                         Recent AI Briefings
                       </span>
@@ -841,7 +846,7 @@ const HowItWorks = () => {
                         )}
                       </button>
                     ) : (
-                      <div className="bg-emerald-50 border border-emerald-150 rounded-xl p-3 flex items-center justify-between">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-emerald-800 text-xs font-semibold">
                           <div className="p-1 rounded-full bg-emerald-100 text-emerald-600">
                             <FileCheck className="w-4 h-4" />
