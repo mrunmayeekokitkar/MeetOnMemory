@@ -17,3 +17,7 @@ logs/
 # System files
 .DS_Store
 Thumbs.db
+# Ignore GitHub Actions workflow files from Prettier formatting
+# These files contain embedded JavaScript with multiline template literals
+# that Prettier's YAML parser cannot handle correctly.
+.github/workflows/
