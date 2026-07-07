@@ -7,8 +7,12 @@ import {
   getOrganizationMembers,
 } from "../controllers/organizationController.js";
 import userAuth from "../middleware/userAuth.js";
+import { apiLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
+
+// Apply rate limiting to all routes
+router.use(apiLimiter);
 
 // Unified endpoint: handles both "create new" and "join existing" organizations
 router.post("/create-or-join", userAuth, createOrJoinOrganization);

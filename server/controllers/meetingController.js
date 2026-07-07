@@ -615,21 +615,11 @@ export const deleteMeeting = async (req, res) => {
    - Used by: MeetingDetails.jsx
    ========================================================= */
 export const getMeetingById = async (req, res) => {
-   7. NEW: UPDATE MEETING (updateMeeting)
-   - Updates meeting fields like title, description, etc.
-   - Used by: MeetingRepository component
-   ========================================================= */
-export const updateMeeting = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id;
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-
-    const meeting = await Meeting.findOne({
-      _id: req.params.id,
-      uploadedBy: userId,
-    });
 
     const meeting = await Meeting.findById(req.params.id);
     if (!meeting) {
@@ -664,14 +654,6 @@ export const updateMeeting = async (req, res) => {
       return res.status(404).json({ success: false, message: "Meeting not found" });
     }
 
-    const { title } = req.body;
-    if (title) {
-      meeting.title = title.trim();
-    }
-
-    await meeting.save();
-
-    return res.status(200).json({ success: true, message: "Meeting updated successfully", meeting });
     // Check if user owns the meeting
     if (meeting.uploadedBy.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: "You don't have permission to update this meeting" });
@@ -679,7 +661,7 @@ export const updateMeeting = async (req, res) => {
 
     // Update allowed fields
     const { title, description, meetingType, date, time, duration, location, venue, tags } = req.body;
-    
+
     if (title) meeting.title = title.trim();
     if (description !== undefined) meeting.description = description;
     if (meetingType) meeting.meetingType = meetingType;
@@ -708,7 +690,7 @@ export const updateMeeting = async (req, res) => {
         description: meeting.description,
         meetingType: meeting.meetingType,
         date: meeting.date,
-      }
+      },
     });
   } catch (error) {
     console.error("❌ updateMeeting Error:", error.message);

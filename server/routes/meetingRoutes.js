@@ -12,7 +12,6 @@ import {
   updateMeeting,           // NEW: Update meeting (rename)
   deleteMeeting,           // EXISTING: Delete meeting
   searchMeetingsByText,    // 🆕 NEW: Voice/Text Search
-  updateMeeting            // 🆕 NEW: Update meeting (rename, etc.)
 } from "../controllers/meetingController.js";
 
 const router = express.Router();
