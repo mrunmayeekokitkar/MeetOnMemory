@@ -16,6 +16,7 @@ import {
   LogOut,
   ChevronDown,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 const NAV_LINKS = [
@@ -198,6 +199,7 @@ const Navbar = () => {
   const appLinks = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Meetings", href: "/meetings", icon: Calendar },
+    { label: "Team Members", href: "/team-members", icon: Users },
     { label: "Organizations", href: "/select-role", icon: Building2 },
     { label: "AI Search", href: "/ai-search", icon: Search },
   ];
@@ -212,7 +214,7 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
-        {/* Logo */}
+          {/* Logo */}
           <div
             className="flex items-center gap-3 cursor-pointer group focus-visible:outline-none"
             onClick={() => navigate("/")}
@@ -223,15 +225,31 @@ const Navbar = () => {
           >
             <div className="flex items-center justify-center">
               {/* Clean Extra Large Native Option A Infinity Symbol with scale only */}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="relative w-16 h-16 transition-transform duration-300 group-hover:scale-105">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 100 100"
+                className="relative w-16 h-16 transition-transform duration-300 group-hover:scale-105"
+              >
                 <defs>
-                  <linearGradient id="navInfinityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient
+                    id="navInfinityGrad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
                     <stop offset="0%" stop-color="#2563eb" />
                     <stop offset="100%" stop-color="#7c3aed" />
                   </linearGradient>
                 </defs>
-                <path d="M25,50 C25,35 38,30 50,50 C62,70 75,65 75,50 C75,35 62,30 50,50 C38,70 25,65 25,50 Z" 
-                      fill="none" stroke="url(#navInfinityGrad)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M25,50 C25,35 38,30 50,50 C62,70 75,65 75,50 C75,35 62,30 50,50 C38,70 25,65 25,50 Z"
+                  fill="none"
+                  stroke="url(#navInfinityGrad)"
+                  stroke-width="11"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
                 <circle cx="25" cy="50" r="6.5" fill="#2563eb" />
                 <circle cx="75" cy="50" r="6.5" fill="#7c3aed" />
               </svg>

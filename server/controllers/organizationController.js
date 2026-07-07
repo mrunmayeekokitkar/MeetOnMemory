@@ -23,7 +23,10 @@ export const createOrJoinOrganization = async (req, res) => {
     if (!name || !name.trim()) {
       return res
         .status(400)
-        .json({ success: false, message: "Please provide an organization name." });
+        .json({
+          success: false,
+          message: "Please provide an organization name.",
+        });
     }
 
     const userId = req.user.id;
@@ -39,7 +42,7 @@ export const createOrJoinOrganization = async (req, res) => {
     if (organization) {
       // --- Join existing organization ---
       const alreadyMember = organization.members.some(
-        (m) => m.toString() === userId.toString()
+        (m) => m.toString() === userId.toString(),
       );
 
       if (!alreadyMember) {
@@ -153,7 +156,7 @@ export const joinOrganization = async (req, res) => {
     }
 
     const alreadyMember = organization.members.some(
-      (m) => m.toString() === userId.toString()
+      (m) => m.toString() === userId.toString(),
     );
 
     if (!alreadyMember) {
@@ -179,6 +182,52 @@ export const joinOrganization = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error joining organization by ID:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/**
+ * ✅ Get organization members
+ * Returns: { success: true, members: [...] }
+ */
+export const getOrganizationMembers = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication failed." });
+    }
+
+    const user = await userModel.findById(req.user.id);
+    if (!user || !user.organization) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "User is not part of an organization.",
+        });
+    }
+
+    const organization = await Organization.findById(
+      user.organization,
+    ).populate({
+      path: "members",
+      select: "name email role createdAt isAccountVerified",
+    });
+
+    if (!organization) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Organization not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      members: organization.members,
+      organizationName: organization.name,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching organization members:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
