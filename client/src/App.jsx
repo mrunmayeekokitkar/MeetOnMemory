@@ -24,6 +24,7 @@ import Reports from "./pages/Reports.jsx";
 import AiSearch from "./pages/AiSearch.jsx";
 import MeetingRoom from "./pages/MeetingRoom.jsx";
 import MeetingDetails from "./pages/MeetingDetails.jsx";
+import TeamMembers from "./pages/TeamMembers.jsx";
 
 // --- Components ---
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -216,6 +217,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <MeetingDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/team-members"
+          element={
+            <ProtectedRoute>
+              <TeamMembers />
             </ProtectedRoute>
           }
         />
