@@ -27,7 +27,7 @@ router.post("/logout", logout);
 
 // ✅ Verification & password reset with rate limiting
 router.post("/send-verify-otp", userAuth, otpLimiter, sendVerifyOtp);
-router.post("/verify-email", userAuth, verifyEmail);
+router.post("/verify-email", userAuth, otpLimiter, verifyEmail);
 router.post("/send-reset-otp", otpLimiter, sendResetOtp);
 router.post("/reset-password", resetPassword);
 
