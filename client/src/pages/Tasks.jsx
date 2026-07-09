@@ -103,99 +103,49 @@ const Tasks = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   // Extract tasks from meetings
-  const res = await axios.get(`${backendUrl}/api/knowledge/action-items?status=all`, {
-  withCredentials: true,
-});
-if (res.data?.success) {
-  const items = res.data.actionItems.map((item) => ({
-    id: item._id,
-    title: item.text,
-    owner: item.owner,
-    dueDate: item.dueDate,
-    status: item.status,
-    meetingId: item.sourceMeetingId?._id,
-    meetingTitle: item.sourceMeetingId?.title,
-    meetingDate: item.sourceMeetingId?.date,
-  }));
-  setTasks(items);
-}
+   // Fetch action items
+useEffect(() => {
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-          // Extract action items from structuredMoM
-          const extractedTasks = [];
-          meetingsData.forEach((meeting) => {
-            const actionItems = meeting.structuredMoM?.action_items || [];
-            actionItems.forEach((item, index) => {
-              const taskText =
-                typeof item === "string"
-                  ? item
-                  : item.task || item.action || "";
-              if (taskText.trim()) {
-                const dueDate = item.due_date || null;
-                const status = item.status?.toLowerCase() || "to-do";
-                const owner = item.owner || "Unassigned";
-
-                // Determine priority based on keywords or default to medium
-                let priority = "medium";
-                const textLower = taskText.toLowerCase();
-                if (
-                  textLower.includes("urgent") ||
-                  textLower.includes("critical") ||
-                  textLower.includes("asap")
-                ) {
-                  priority = "high";
-                } else if (
-                  textLower.includes("low priority") ||
-                  textLower.includes("when possible")
-                ) {
-                  priority = "low";
-                }
-
-                // Check if overdue
-                let finalStatus = status;
-                if (
-                  dueDate &&
-                  new Date(dueDate) < new Date() &&
-                  status !== "completed"
-                ) {
-                  finalStatus = "overdue";
-                }
-
-                extractedTasks.push({
-                  id: `${meeting._id}-${index}`,
-                  title: taskText,
-                  owner,
-                  dueDate,
-                  status: finalStatus,
-                  priority,
-                  meetingId: meeting._id,
-                  meetingTitle: meeting.title,
-                  organization: meeting.organization?.name || "Personal",
-                  meetingDate: meeting.date,
-                  description:
-                    typeof item === "string"
-                      ? taskText
-                      : item.description || taskText,
-                });
-              }
-            });
-          });
-
-          setTasks(extractedTasks);
-        } else {
-          setError(res.data?.message || "Failed to load tasks");
-          toast.error(res.data?.message || "Failed to load tasks");
+      const res = await axios.get(
+        `${backendUrl}/api/knowledge/action-items?status=all`,
+        {
+          withCredentials: true,
         }
-      } catch (err) {
-        console.error("Error fetching tasks:", err);
-        setError("Unable to fetch tasks");
-        toast.error("Unable to fetch tasks");
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
 
-    fetchMeetingsAndExtractTasks();
-  }, [backendUrl]);
+      if (res.data?.success) {
+        const items = res.data.actionItems.map((item) => ({
+          id: item._id,
+          title: item.text,
+          owner: item.owner,
+          dueDate: item.dueDate,
+          status: item.status,
+          meetingId: item.sourceMeetingId?._id,
+          meetingTitle: item.sourceMeetingId?.title,
+          meetingDate: item.sourceMeetingId?.date,
+        }));
+
+        setTasks(items);
+      } else {
+        setError(res.data?.message || "Failed to load tasks");
+        toast.error(res.data?.message || "Failed to load tasks");
+      }
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Unable to fetch tasks");
+      toast.error("Unable to fetch tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTasks();
+}, [backendUrl]);
+        
 
   // Get unique values for filters
   const organizations = [...new Set(tasks.map((t) => t.organization))];
