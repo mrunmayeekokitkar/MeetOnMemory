@@ -52,6 +52,11 @@ const csrfProtection = csrf({
 });
 
 app.use((req, res, next) => {
+  // Bypass CSRF in development to avoid localhost cross-origin cookie blocking
+  if (process.env.NODE_ENV !== "production") {
+    return next();
+  }
+
   if (req.method === "GET") {
     csrfProtection(req, res, (err) => {
       if (err) return next(err);
