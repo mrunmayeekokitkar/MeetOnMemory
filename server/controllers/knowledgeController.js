@@ -70,16 +70,28 @@ export const getOpenActionItems = async (req, res) => {
     }
 
     let query;
-
     if (status === "all") {
-      query = ActionItem.find({
-        organization,
-      });
-    } else {
-      query = ActionItem.find({
-        organization,
-        status,
-      });
+      query = ActionItem.find({ organization });
+    } else if (status === "open") {
+       query = ActionItem.find({
+       organization,
+       status: "open",
+       });
+    } else if (status === "in-progress") {
+       query = ActionItem.find({
+       organization,
+       status: "in-progress",
+       });
+    } else if (status === "resolved") {
+       query = ActionItem.find({
+       organization,
+       status: "resolved",
+       });
+    } else if (status === "superseded") {
+       query = ActionItem.find({
+       organization,
+       status: "superseded",
+       });
     }
 
     const items = await query
