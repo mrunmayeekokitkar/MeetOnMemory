@@ -5,7 +5,7 @@ import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import userAuth from "../middleware/userAuth.js";
 import Policy from "../models/policyModel.js";
-import { requireOwnerOrAdmin } from "../middleware/rbac.js";
+import { requireOwnerOrAdmin, requireOrgMembership } from "../middleware/rbac.js";
 import {
   uploadPolicy,
   getPolicies,
@@ -137,11 +137,12 @@ router.post(
   "/upload",
   uploadLimiter,
   userAuth,
+  requireOrgMembership,
   handleMulterUpload,
   uploadPolicy,
 );
-router.post("/:id/analyze", analyzeLimiter, userAuth, analyzePolicy);
-router.get("/download/:id", downloadLimiter, userAuth, downloadPolicy);
+router.post("/:id/analyze", analyzeLimiter, userAuth, requireOwnerOrAdmin(Policy), analyzePolicy);
+router.get("/download/:id", downloadLimiter, userAuth, requireOwnerOrAdmin(Policy), downloadPolicy);
 router.delete("/:id", deleteLimiter, userAuth, requireOwnerOrAdmin(Policy), deletePolicy);
 
 export default router;

@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import Meeting from "../models/meetingModel.js";
-import { requireOwnerOrAdmin, requireOwner } from "../middleware/rbac.js";
+import { requireOwnerOrAdmin, requireOwner, requireOrgAccess } from "../middleware/rbac.js";
 import userAuth from "../middleware/userAuth.js";
 import {
   apiLimiter,
@@ -51,7 +51,7 @@ router.get("/:id", userAuth, getMeetingById);
 router.patch("/:id", userAuth, requireOwner(Meeting), updateMeeting);
 
 // ✅ Export Meeting
-router.get("/:id/export", userAuth, exportMeeting);
+router.get("/:id/export", userAuth, requireOrgAccess(Meeting), exportMeeting);
 
 // ✅ Delete Meeting
 router.delete("/delete/:id", userAuth, writeLimiter, requireOwnerOrAdmin(Meeting), deleteMeeting);

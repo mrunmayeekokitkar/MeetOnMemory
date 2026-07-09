@@ -1,4 +1,6 @@
 // server/middleware/rbac.js
+import mongoose from "mongoose";
+
 export const requireRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -38,6 +40,9 @@ export const requireOwnerOrAdmin = (Model) => {
       if (!docId) {
         return res.status(400).json({ success: false, message: "Document ID required" });
       }
+      if (!mongoose.Types.ObjectId.isValid(docId)) {
+        return res.status(400).json({ success: false, message: "Invalid Document ID format" });
+      }
 
       const doc = await Model.findById(docId);
       if (!doc) {
@@ -75,6 +80,9 @@ export const requireOwner = (Model) => {
       if (!docId) {
         return res.status(400).json({ success: false, message: "Document ID required" });
       }
+      if (!mongoose.Types.ObjectId.isValid(docId)) {
+        return res.status(400).json({ success: false, message: "Invalid Document ID format" });
+      }
 
       const doc = await Model.findById(docId);
       if (!doc) {
@@ -91,6 +99,44 @@ export const requireOwner = (Model) => {
       next();
     } catch (error) {
       console.error("requireOwner error:", error);
+      res.status(500).json({ success: false, message: "Server error during authorization check" });
+    }
+  };
+};
+
+export const requireOrgAccess = (Model) => {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
+
+      const docId = req.params.id;
+      if (!docId) {
+        return res.status(400).json({ success: false, message: "Document ID required" });
+      }
+      if (!mongoose.Types.ObjectId.isValid(docId)) {
+        return res.status(400).json({ success: false, message: "Invalid Document ID format" });
+      }
+
+      const doc = await Model.findById(docId);
+      if (!doc) {
+        return res.status(404).json({ success: false, message: "Resource not found" });
+      }
+
+      const isOwner = doc.uploadedBy?.toString() === req.user._id.toString();
+      const isInSameOrg = 
+        doc.organization && req.user.organization &&
+        doc.organization.toString() === req.user.organization.toString();
+
+      if (!isOwner && !isInSameOrg) {
+        return res.status(403).json({ success: false, message: "Forbidden: You don't have access to this resource" });
+      }
+
+      req.doc = doc;
+      next();
+    } catch (error) {
+      console.error("requireOrgAccess error:", error);
       res.status(500).json({ success: false, message: "Server error during authorization check" });
     }
   };
