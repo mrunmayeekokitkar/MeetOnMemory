@@ -196,41 +196,41 @@ const CreateMeeting = () => {
   };
 
   const handleRecordingChoice = async (willRecord) => {
-  setShowRecordingDialog(false);
+    setShowRecordingDialog(false);
 
-  const recordingStatus = willRecord
-    ? "with recording enabled"
-    : "without recording";
-  toast.success(`🎥 Starting live meeting ${recordingStatus}...`);
+    const recordingStatus = willRecord
+      ? "with recording enabled"
+      : "without recording";
+    toast.success(`🎥 Starting live meeting ${recordingStatus}...`);
 
-  const roomId =
-    Math.random().toString(36).substring(2, 10) +
-    "-" +
-    Math.random().toString(36).substring(2, 6);
+    const roomId =
+      Math.random().toString(36).substring(2, 10) +
+      "-" +
+      Math.random().toString(36).substring(2, 6);
 
-  // Notify backend to push notifications
-  if (liveParticipants.length > 0) {
-    meetingApi
-      .notifyLive({
-        roomId,
-        participants: liveParticipants,
-      })
-      .catch((error) => {
-        console.error("Failed to notify participants:", error);
-      });
-  }
+    // Notify backend to push notifications
+    if (liveParticipants.length > 0) {
+      meetingApi
+        .notifyLive({
+          roomId,
+          participants: liveParticipants,
+        })
+        .catch((error) => {
+          console.error("Failed to notify participants:", error);
+        });
+    }
 
-  // Redirect with query parameters
-  setTimeout(() => {
-    const queryParams = new URLSearchParams({
-      recording: willRecord.toString(),
-      participants: JSON.stringify(liveParticipants),
-    }).toString();
+    // Redirect with query parameters
+    setTimeout(() => {
+      const queryParams = new URLSearchParams({
+        recording: willRecord.toString(),
+        participants: JSON.stringify(liveParticipants),
+      }).toString();
 
-    window.open(`/meeting-room/${roomId}?${queryParams}`, "_blank");
+      window.open(`/meeting-room/${roomId}?${queryParams}`, "_blank");
 
-    setLiveParticipants([]);
-  }, 500);
+      setLiveParticipants([]);
+    }, 500);
   };
   // ========== HANDLERS: SECTION 3 - SESSION CARDS ==========
   const handleSessionChange = (e) => {

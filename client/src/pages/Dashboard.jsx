@@ -130,7 +130,7 @@ const Dashboard = () => {
   const handleCardClick = (id) => navigate(ROUTE_MAP[id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-b from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <Navbar />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 sm:pb-20">
@@ -141,11 +141,11 @@ const Dashboard = () => {
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-16 -right-12 h-56 w-56 rounded-full bg-blue-200/30 blur-3xl"
+            className="pointer-events-none absolute -top-16 -right-12 h-56 w-56 rounded-full bg-blue-200/30 dark:bg-blue-900/20 blur-3xl"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-violet-200/25 blur-3xl"
+            className="pointer-events-none absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-violet-200/25 dark:bg-violet-900/20 blur-3xl"
           />
 
           <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">

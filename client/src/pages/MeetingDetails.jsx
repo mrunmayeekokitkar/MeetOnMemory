@@ -57,7 +57,9 @@ const MeetingDetails = () => {
 
   const handleRename = async (meetingId, newTitle) => {
     try {
-      const { data } = await meetingApi.updateMeeting(meetingId, { title: newTitle });
+      const { data } = await meetingApi.updateMeeting(meetingId, {
+        title: newTitle,
+      });
       if (data.success) {
         toast.success("Meeting renamed successfully");
         setMeeting({ ...meeting, title: newTitle });
