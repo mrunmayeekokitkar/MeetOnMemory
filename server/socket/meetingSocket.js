@@ -1,9 +1,51 @@
+import jwt from "jsonwebtoken";
+
+const parseCookie = (str) =>
+  str
+    .split(";")
+    .map((v) => v.split("="))
+    .reduce((acc, v) => {
+      if (v[0] && v[1] !== undefined) {
+        acc[decodeURIComponent(v[0].trim())] = decodeURIComponent(v[1].trim());
+      }
+      return acc;
+    }, {});
+
 export default (io) => {
   const usersInRoom = {}; // roomId -> Array of { socketId, ...userInfo }
   const socketToRoom = {}; // socketId -> roomId
 
+  // Authentication Middleware
+  io.use((socket, next) => {
+    try {
+      const cookieHeader = socket.request.headers.cookie;
+      if (!cookieHeader) {
+        return next(new Error("Authentication error: No cookies found"));
+      }
+
+      const cookies = parseCookie(cookieHeader);
+      const token = cookies.token; // The cookie name used in the application is 'token'
+
+      if (!token) {
+        return next(new Error("Authentication error: No token found"));
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.userId = decoded.id;
+      next();
+    } catch (error) {
+      console.error("Socket authentication error:", error.message);
+      return next(new Error("Authentication error"));
+    }
+  });
+
   io.on("connection", (socket) => {
-    console.log("🟢 User connected:", socket.id);
+    console.log("🟢 User connected:", socket.id, "User ID:", socket.userId);
+
+    // Join a personal room for notifications
+    if (socket.userId) {
+      socket.join(socket.userId.toString());
+    }
 
     // Join room
     socket.on("join-meeting", ({ roomId, userInfo }) => {
@@ -19,7 +61,9 @@ export default (io) => {
       socket.join(roomId);
 
       // Tell the newly joined user about other users in the room
-      const usersInThisRoom = usersInRoom[roomId].filter(id => id.socketId !== socket.id);
+      const usersInThisRoom = usersInRoom[roomId].filter(
+        (id) => id.socketId !== socket.id,
+      );
       socket.emit("all-users", usersInThisRoom);
 
       // Tell everyone else that a new user joined
@@ -30,18 +74,18 @@ export default (io) => {
     // WebRTC Signaling: relaying signals
     socket.on("sending-signal", (payload) => {
       // payload: { userToSignal, callerID, signal }
-      io.to(payload.userToSignal).emit("user-joined-signal", { 
-        signal: payload.signal, 
+      io.to(payload.userToSignal).emit("user-joined-signal", {
+        signal: payload.signal,
         callerID: payload.callerID,
-        userInfo: payload.userInfo
+        userInfo: payload.userInfo,
       });
     });
 
     socket.on("returning-signal", (payload) => {
       // payload: { signal, callerID }
       io.to(payload.callerID).emit("receiving-returned-signal", {
-        signal: payload.signal, 
-        id: socket.id 
+        signal: payload.signal,
+        id: socket.id,
       });
     });
 
@@ -50,7 +94,7 @@ export default (io) => {
       socket.to(roomId).emit("user-media-changed", {
         socketId: socket.id,
         type, // 'audio' | 'video' | 'screen'
-        enabled
+        enabled,
       });
     });
 
@@ -59,15 +103,15 @@ export default (io) => {
       console.log("🔴 User disconnected:", socket.id);
       const roomId = socketToRoom[socket.id];
       let room = usersInRoom[roomId];
-      
+
       if (room) {
-        room = room.filter(u => u.socketId !== socket.id);
+        room = room.filter((u) => u.socketId !== socket.id);
         usersInRoom[roomId] = room;
         if (room.length === 0) {
           delete usersInRoom[roomId];
         }
       }
-      
+
       socket.to(roomId).emit("user-left", socket.id);
       delete socketToRoom[socket.id];
     });

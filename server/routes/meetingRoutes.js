@@ -1,7 +1,11 @@
 import express from "express";
 import multer from "multer";
 import Meeting from "../models/meetingModel.js";
-import { requireOwnerOrAdmin, requireOwner, requireOrgAccess } from "../middleware/rbac.js";
+import {
+  requireOwnerOrAdmin,
+  requireOwner,
+  requireOrgAccess,
+} from "../middleware/rbac.js";
 import userAuth from "../middleware/userAuth.js";
 import {
   apiLimiter,
@@ -18,6 +22,7 @@ import {
   updateMeeting, // NEW: Update meeting (rename)
   deleteMeeting, // EXISTING: Delete meeting
   searchMeetingsByText, // 🆕 NEW: Voice/Text Search
+  notifyLiveMeeting, // NEW: Notify participants of a live meeting
 } from "../controllers/meetingController.js";
 import { exportMeeting } from "../controllers/exportController.js";
 
@@ -54,7 +59,13 @@ router.patch("/:id", userAuth, requireOwner(Meeting), updateMeeting);
 router.get("/:id/export", userAuth, requireOrgAccess(Meeting), exportMeeting);
 
 // ✅ Delete Meeting
-router.delete("/delete/:id", userAuth, writeLimiter, requireOwnerOrAdmin(Meeting), deleteMeeting);
+router.delete(
+  "/delete/:id",
+  userAuth,
+  writeLimiter,
+  requireOwnerOrAdmin(Meeting),
+  deleteMeeting,
+);
 
 // ========== NEW ROUTES (for CreateMeeting.jsx) ==========
 
@@ -74,6 +85,15 @@ router.post(
 router.post("/search", userAuth, searchMeetingsByText);
 
 // 🆕 ✅ Update Meeting Route (Frontend: Meeting Repository - rename, etc.)
-router.put("/:id", userAuth, writeLimiter, requireOwner(Meeting), updateMeeting);
+router.put(
+  "/:id",
+  userAuth,
+  writeLimiter,
+  requireOwner(Meeting),
+  updateMeeting,
+);
+
+// ✅ Notify Live Meeting Participants (from CreateMeeting Live section)
+router.post("/notify-live", userAuth, writeLimiter, notifyLiveMeeting);
 
 export default router;

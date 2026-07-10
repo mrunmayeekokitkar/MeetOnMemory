@@ -200,7 +200,7 @@ const CreateMeeting = () => {
     setShowRecordingDialog(true);
   };
 
-  const handleRecordingChoice = (willRecord) => {
+  const handleRecordingChoice = async (willRecord) => {
     setShowRecordingDialog(false);
 
     const recordingStatus = willRecord
@@ -221,6 +221,23 @@ const CreateMeeting = () => {
       }).toString();
 
       window.open(`/meeting-room/${roomId}?${queryParams}`, "_blank");
+
+    // Notify backend to push notifications to invited participants (fire-and-forget)
+    if (liveParticipants.length > 0) {
+      axios
+        .post(
+          `${backendUrl}/api/meetings/notify-live`,
+          { roomId, participants: liveParticipants },
+          { withCredentials: true },
+        )
+        .catch((error) => {
+          console.error("Failed to notify participants:", error);
+        });
+    }
+
+    // Redirect to meeting room with parameters
+    setTimeout(() => {
+      window.open(`/meeting-room/${roomId}`, "_blank");
 
       // Reset participants after redirect
       setLiveParticipants([]);
