@@ -46,6 +46,7 @@ export const AppContextProvider = ({ children }) => {
         }
       } catch (csrfErr) {
         console.error("Failed to fetch CSRF token", csrfErr);
+        toast.error("Failed to initialize secure session. Please check your connection and refresh.");
       }
 
       const { data } = await authApi.getAuthState();

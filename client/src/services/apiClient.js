@@ -12,8 +12,40 @@ apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
     let friendlyMessage = "An unexpected error occurred. Please try again.";
+    
+    // CSRF Retry Logic
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data &&
+      error.response.data.message === "CSRF token validation failed."
+    ) {
+      const originalRequest = error.config;
+      
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          const { data } = await axios.get(`${backendUrl}/api/auth/csrf`, {
+            withCredentials: true,
+          });
+          if (data && data.csrfToken) {
+            // Update default headers and the original request
+            apiClient.defaults.headers.common["X-CSRF-Token"] = data.csrfToken;
+            originalRequest.headers["X-CSRF-Token"] = data.csrfToken;
+            // Retry the request
+            return apiClient(originalRequest);
+          }
+        } catch (csrfErr) {
+          console.error("Failed to refresh CSRF token", csrfErr);
+          friendlyMessage = "Session security token expired. Please refresh the page.";
+        }
+      } else {
+        friendlyMessage = "Session security token expired. Please refresh the page.";
+      }
+    }
+
 
     if (!error.response) {
       // Network error (offline or server not reachable)
@@ -29,7 +61,9 @@ apiClient.interceptors.response.use(
               : "Session expired. Please log in again.";
           break;
         case 403:
-          friendlyMessage = "You do not have permission to perform this action.";
+          if (error.response.data?.message !== "CSRF token validation failed.") {
+            friendlyMessage = "You do not have permission to perform this action.";
+          }
           break;
         case 404:
           friendlyMessage = "The requested resource was not found.";
