@@ -274,7 +274,7 @@ const Profile = () => {
                     <User className="w-3 h-3 text-slate-400 dark:text-gray-500" />
                     Role
                   </div>
-                  <div className="text-sm font-semibold text-slate-900 capitalize">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-gray-100 capitalize">
                     {displayRole}
                   </div>
                 </div>

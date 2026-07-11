@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar.jsx";
 import AppContent from "../context/AppContent";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTheme } from "../context/useTheme";
 import {
   User,
   Mail,
@@ -81,8 +82,10 @@ const Settings = () => {
     }));
   };
 
-  const handleThemeChange = (theme) => {
-    setAppearancePrefs((prev) => ({ ...prev, theme }));
+  const handleThemeChange = (newTheme) => {
+    if (newTheme !== theme) {
+      toggleTheme();
+    }
   };
 
   return (
@@ -147,7 +150,7 @@ const Settings = () => {
                     <p className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
                       Email
                     </p>
-                    <p className="text-sm font-semibold text-slate-900 break-all">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-gray-100 break-all">
                       {userData.email}
                     </p>
                   </div>
@@ -185,7 +188,7 @@ const Settings = () => {
           </div>
 
           {/* Appearance Section */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm fade-in-up stagger-3">
+          <div className="bg-white dark:bg-gray-800 border border-slate-200/80 dark:border-gray-700 rounded-2xl p-6 shadow-sm fade-in-up stagger-3">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
                 <Palette className="w-5 h-5 text-purple-600" />
@@ -210,7 +213,7 @@ const Settings = () => {
                   <button
                     onClick={() => handleThemeChange("light")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appearancePrefs.theme === "light"
+                      theme === "light"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
                     }`}
@@ -220,7 +223,7 @@ const Settings = () => {
                   <button
                     onClick={() => handleThemeChange("dark")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appearancePrefs.theme === "dark"
+                      theme === "dark"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
                     }`}
@@ -439,7 +442,7 @@ const Settings = () => {
               <button
                 onClick={handleLogout}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-semibold transition-colors cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -457,7 +460,7 @@ const Settings = () => {
           </div>
 
           {/* Preferences Section */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm fade-in-up stagger-6">
+          <div className="bg-white dark:bg-gray-800 border border-slate-200/80 dark:border-gray-700 rounded-2xl p-6 shadow-sm fade-in-up stagger-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-xl">
                 <Globe className="w-5 h-5 text-green-600" />
@@ -490,7 +493,7 @@ const Settings = () => {
                       language: e.target.value,
                     }))
                   }
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200 cursor-pointer"
                 >
                   <option value="en">English</option>
                   <option value="es">Spanish</option>
@@ -534,7 +537,7 @@ const Settings = () => {
                       dateFormat: e.target.value,
                     }))
                   }
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200 cursor-pointer"
                 >
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>

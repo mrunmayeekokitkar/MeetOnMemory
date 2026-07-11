@@ -640,7 +640,7 @@ const Calendar = () => {
                                 <div className="truncate pr-1">
                                   {event.title}
                                 </div>
-                                <div className="text-[8px] text-slate-500/80 font-semibold flex items-center gap-1 mt-0.5">
+                                <div className="text-[8px] text-slate-500/80 dark:text-gray-400/80 font-semibold flex items-center gap-1 mt-0.5">
                                   <Clock className="w-2.5 h-2.5 shrink-0" />
                                   <span>{formatTimeSlot(event.time)}</span>
                                 </div>
@@ -773,7 +773,7 @@ const Calendar = () => {
                               <h4 className="font-bold text-slate-900 dark:text-gray-100 text-sm truncate">
                                 {event.title}
                               </h4>
-                              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase">
+                              <p className="text-[10px] font-bold text-slate-400/80 dark:text-gray-400/80 uppercase">
                                 {formatTimeSlot(event.time)}
                               </p>
                               {event.organization && (
@@ -912,7 +912,7 @@ const Calendar = () => {
                   setSelectedMeeting(null);
                   navigate(`/meeting/${selectedMeeting._id}`);
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-gray-100 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 rounded-xl transition-all shadow-xs cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 View full details

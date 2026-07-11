@@ -154,10 +154,10 @@ const TeamMembers = () => {
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <XCircle className="h-16 w-16 text-red-500 mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-gray-100 mb-2">
               Error Loading Members
             </h2>
-            <p className="text-slate-500 mb-4">{error}</p>
+            <p className="text-slate-500 dark:text-gray-400 mb-4">{error}</p>
             <button
               onClick={fetchMembers}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -399,7 +399,7 @@ const TeamMembers = () => {
                       Status
                     </span>
                   </div>
-                  <span className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <span className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-gray-400">
                     {selectedMember.isAccountVerified ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-500" />

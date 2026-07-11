@@ -31,12 +31,12 @@ const CATEGORY_ICONS = {
 };
 
 const CATEGORY_COLORS = {
-  meetings: "bg-blue-50 text-blue-600 border-blue-200",
-  ai_processing: "bg-violet-50 text-violet-600 border-violet-200",
-  organizations: "bg-emerald-50 text-emerald-600 border-emerald-200",
-  policies: "bg-amber-50 text-amber-600 border-amber-200",
-  reports: "bg-indigo-50 text-indigo-600 border-indigo-200",
-  system: "bg-slate-50 text-slate-600 border-slate-200",
+  meetings: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+  ai_processing: "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 border-violet-200 dark:border-violet-800",
+  organizations: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  policies: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  reports: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+  system: "bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-gray-300 border-slate-200 dark:border-gray-600",
 };
 
 const CATEGORY_LABELS = {
