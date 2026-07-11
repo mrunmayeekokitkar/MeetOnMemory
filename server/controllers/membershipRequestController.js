@@ -129,7 +129,8 @@ export const getOrganizationMembershipRequests = async (req, res) => {
     }
 
     // Validate status if provided
-    if (status && !isValidStatus(status)) {
+    const validStatus = status && isValidStatus(status) ? status : null;
+    if (status && !validStatus) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid status value." });
@@ -160,8 +161,8 @@ export const getOrganizationMembershipRequests = async (req, res) => {
     }
 
     const filter = { organization: organizationId };
-    if (status) {
-      filter.status = status;
+    if (validStatus) {
+      filter.status = validStatus;
     }
 
     const requests = await MembershipRequest.find(filter)

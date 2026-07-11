@@ -125,28 +125,35 @@ export const getOrganizations = async (req, res) => {
     const { visibility, page = 1, limit = 20 } = req.query;
 
     const filter = {};
+    const validVisibility = visibility && isValidVisibility(visibility) ? visibility : null;
     if (visibility) {
       // Validate visibility value
-      if (!isValidVisibility(visibility)) {
+      if (!validVisibility) {
         return res
           .status(400)
           .json({ success: false, message: "Invalid visibility value." });
       }
-      filter.visibility = visibility;
+      filter.visibility = validVisibility;
     }
 
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
-    const organizations = await Organization.find(filter)
+    // Build safe query filter with only validated values
+    const safeFilter = {};
+    if (validVisibility) {
+      safeFilter.visibility = validVisibility;
+    }
+
+    const organizations = await Organization.find(safeFilter)
       .sort({ createdAt: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
       .select("name slug description logo visibility owner createdAt")
       .lean();
 
-    const total = await Organization.countDocuments(filter);
+    const total = await Organization.countDocuments(safeFilter);
 
     res.status(200).json({
       success: true,
