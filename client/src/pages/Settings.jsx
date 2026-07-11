@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar.jsx";
 import AppContent from "../context/AppContent";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useTheme } from "../context/useTheme";
+import useTheme from "../context/useTheme";
 import {
   User,
   Mail,
