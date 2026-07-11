@@ -8,7 +8,6 @@ import OrganizationGrid from "../components/organization/OrganizationGrid";
 import OrganizationEmptyState from "../components/organization/OrganizationEmptyState";
 
 const OrganizationHub = () => {
-  const { getUserData } = useContext(AppContent);
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
 
