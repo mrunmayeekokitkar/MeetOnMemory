@@ -10,4 +10,8 @@ export const organizationApi = {
   selectOrganization: (data) => apiClient.post("/api/organizations/select", data),
   getPublicOrganizationBySlug: (slug) =>
     apiClient.get(`/api/organizations/public/${slug}`),
+  browsePublicOrganizations: (params) =>
+    apiClient.get("/api/organizations/browse", { params }),
+  searchOrganizations: (params) =>
+    apiClient.get("/api/organizations/search", { params }),
 };
