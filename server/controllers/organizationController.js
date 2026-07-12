@@ -411,6 +411,11 @@ export const getPublicOrganizationBySlug = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error fetching public organization:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/**
  * ✅ Browse public organizations with pagination and filters
  * Query params: page, limit, search, sortBy, filter
  * Returns: { success: true, organizations: [...], pagination: {...} }
