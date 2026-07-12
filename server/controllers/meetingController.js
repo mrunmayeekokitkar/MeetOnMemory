@@ -23,6 +23,8 @@ import { createAndPushNotification } from "../services/notificationService.js";
 const isValidObjectId = (id) =>
   typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
 
+import * as calendarService from "../services/calendarService.js";
+import { aiQueue } from "../services/queueService.js";
 /**
  * Meeting Controller - Handles all meeting operations
  *
@@ -127,6 +129,20 @@ export const createMeeting = async (req, res) => {
       } catch (notifErr) {
         console.error("⚠️ Notification error (continuing):", notifErr.message);
       }
+    }
+
+    // Sync with Google Calendar if enabled
+    try {
+      const user = await User.findById(uploaderId);
+      if (user && user.calendarSyncEnabled) {
+        const eventId = await calendarService.createEvent(user, meeting);
+        if (eventId) {
+          meeting.googleEventId = eventId;
+          await meeting.save();
+        }
+      }
+    } catch (calErr) {
+      console.error("⚠️ Google Calendar sync error (continuing):", calErr.message);
     }
 
     return res.status(200).json({
@@ -415,6 +431,7 @@ export const uploadAudioForMeeting = async (req, res) => {
 export const summarizeMeeting = async (req, res) => {
   try {
     const { meetingId, transcript, date, title } = req.body;
+    const userId = req.user?.id || req.user?._id;
 
     if (meetingId && !isValidObjectId(meetingId)) {
       return res
@@ -449,6 +466,23 @@ export const summarizeMeeting = async (req, res) => {
       });
     }
 
+    if (aiQueue) {
+      console.log(`🚀 Queueing MoM generation job for ${meetingId || "transcript-only"}...`);
+      await aiQueue.add("generate-mom", {
+        meetingId,
+        transcript: textToSummarize,
+        date,
+        title,
+        userId
+      });
+      
+      return res.status(202).json({
+        success: true,
+        message: "Minutes generation started in the background. Please wait...",
+      });
+    }
+
+    // Fallback if redis is disabled (sync generation)
     console.log(`🧠 Generating MoM for ${meetingId || "transcript-only"}...`);
 
     // ======= Build Professional MoM Prompt =======
@@ -759,19 +793,44 @@ export const getAllMeetings = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    const { page = 1, limit = 10, startDate, endDate } = req.query;
+
     const queryOptions = [{ uploadedBy: userId }];
     if (req.user?.organization) {
       queryOptions.push({ organization: req.user.organization });
     }
 
-    const meetings = await Meeting.find({ $or: queryOptions })
+    const query = { $or: queryOptions };
+
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const meetings = await Meeting.find(query)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
       .select(
         "title summary structuredMoM createdAt date meetingType status time duration recordingType organization",
       )
       .populate("organization", "name");
 
-    return res.status(200).json({ success: true, meetings });
+    const totalMeetings = await Meeting.countDocuments(query);
+
+    return res.status(200).json({ 
+      success: true, 
+      meetings,
+      pagination: {
+        total: totalMeetings,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalMeetings / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error("❌ getAllMeetings Error:", error.message);
     return res
@@ -796,8 +855,26 @@ export const deleteMeeting = async (req, res) => {
           .status(404)
           .json({ success: false, message: "Meeting not found" });
       }
+
+      // Sync deletion with Google Calendar
+      if (deleted.googleEventId) {
+        const user = await User.findById(deleted.uploadedBy);
+        if (user && user.calendarSyncEnabled) {
+          await calendarService.deleteEvent(user, deleted.googleEventId);
+        }
+      }
     } else {
+      const uploaderId = meeting.uploadedBy;
+      const googleEventId = meeting.googleEventId;
       await meeting.deleteOne();
+
+      // Sync deletion with Google Calendar
+      if (googleEventId) {
+        const user = await User.findById(uploaderId);
+        if (user && user.calendarSyncEnabled) {
+          await calendarService.deleteEvent(user, googleEventId);
+        }
+      }
     }
 
     res
@@ -904,6 +981,18 @@ export const updateMeeting = async (req, res) => {
       await indexMeeting(meeting);
     } catch (idxErr) {
       console.error("⚠️ indexMeeting error (continuing):", idxErr.message);
+    }
+
+    // Sync update with Google Calendar
+    if (meeting.googleEventId) {
+      try {
+        const user = await User.findById(userId);
+        if (user && user.calendarSyncEnabled) {
+          await calendarService.updateEvent(user, meeting);
+        }
+      } catch (calErr) {
+        console.error("⚠️ Google Calendar update sync error:", calErr.message);
+      }
     }
 
     return res.status(200).json({

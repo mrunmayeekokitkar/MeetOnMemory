@@ -28,6 +28,7 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import { initVectorStore } from "./utils/embeddingUtils.js";
 import meetingSocket from "./socket/meetingSocket.js";
 import { initRedis } from "./services/redisService.js";
+import { initAIWorker } from "./services/queueService.js";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -201,6 +202,7 @@ const io = new Server(server, {
 app.set("io", io);
 
 meetingSocket(io);
+initAIWorker(app);
 
 // ================================
 // ERROR HANDLER
