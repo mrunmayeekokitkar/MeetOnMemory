@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { organizationApi } from "../../services";
 import { toast } from "react-toastify";
 import Navbar from "../../components/Navbar.jsx";
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 
 const BrowseOrganizations = () => {
-  const navigate = useNavigate();
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,19 +33,6 @@ const BrowseOrganizations = () => {
 
   const observerRef = useRef(null);
   const searchTimeoutRef = useRef(null);
-
-  // Debounced search
-  const debouncedSearch = useCallback(
-    (query) => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-      searchTimeoutRef.current = setTimeout(() => {
-        fetchOrganizations(1, query, sortBy, filter);
-      }, 300);
-    },
-    [sortBy, filter]
-  );
 
   // Fetch organizations
   const fetchOrganizations = async (
@@ -94,9 +79,25 @@ const BrowseOrganizations = () => {
     }
   };
 
+  // Debounced search
+  const debouncedSearch = useCallback(
+    (query) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchOrganizations(1, query, sortBy, filter);
+      }, 300);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortBy, filter]
+  );
+
   // Initial load
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchOrganizations(1, searchQuery, sortBy, filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle search input
@@ -144,6 +145,7 @@ const BrowseOrganizations = () => {
 
       if (node) observerRef.current.observe(node);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [loadingMore, pagination.hasNextPage, searchQuery, sortBy, filter]
   );
 
@@ -158,7 +160,7 @@ const BrowseOrganizations = () => {
   };
 
   // Handle view profile
-  const handleViewProfile = (org) => {
+  const handleViewProfile = () => {
     // Navigate to organization profile (to be implemented in separate issue)
     toast.info("Organization profile page coming soon");
   };
@@ -385,7 +387,7 @@ const BrowseOrganizations = () => {
 
                       {/* View Profile Button */}
                       <button
-                        onClick={() => handleViewProfile(org)}
+                        onClick={handleViewProfile}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all hover:shadow-lg"
                       >
                         View Profile

@@ -5,6 +5,13 @@ import { createAndPushNotification } from "../services/notificationService.js";
 import mongoose from "mongoose";
 
 /**
+ * Escape special regex characters to prevent ReDoS attacks
+ */
+const escapeRegex = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+/**
  * ✅ Create or Join Organization
  * - If org exists → join as Member
  * - If not → create new org as Admin
@@ -375,7 +382,8 @@ export const browsePublicOrganizations = async (req, res) => {
     // Add search filter if provided
     let searchQuery = { ...baseQuery };
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i");
+      const escapedSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(escapedSearch, "i");
       searchQuery = {
         ...baseQuery,
         $or: [
@@ -479,7 +487,8 @@ export const searchOrganizations = async (req, res) => {
       });
     }
 
-    const searchRegex = new RegExp(q.trim(), "i");
+    const escapedQuery = escapeRegex(q.trim());
+    const searchRegex = new RegExp(escapedQuery, "i");
     const skip = (page - 1) * limit;
 
     // Search in public organizations only
