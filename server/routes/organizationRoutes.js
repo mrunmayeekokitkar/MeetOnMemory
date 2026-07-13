@@ -11,6 +11,8 @@ import {
   searchOrganizations,
 } from "../controllers/organizationController.js";
 import userAuth from "../middleware/userAuth.js";
+import { apiLimiter } from "../middleware/rateLimiter.js";
+import { requireAdmin } from "../middleware/rbac.js";
 import { apiLimiter, writeLimiter } from "../middleware/rateLimiter.js";
 import {
   requirePermission,
@@ -23,6 +25,7 @@ const router = express.Router();
 router.use(apiLimiter);
 
 // Unified endpoint: handles both "create new" and "join existing" organizations
+router.post("/create-or-join", userAuth, requireAdmin, createOrJoinOrganization);
 router.post("/create-or-join", userAuth, writeLimiter, requirePermission("organizations", "create"), createOrJoinOrganization);
 
 // Member joins by selecting an existing org

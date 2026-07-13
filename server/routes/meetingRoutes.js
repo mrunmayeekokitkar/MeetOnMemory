@@ -5,6 +5,7 @@ import {
   requireOwnerOrAdmin,
   requireOwner,
   requireOrgAccess,
+  requireAdmin,
   requirePermission,
   requireOrgMembership,
 } from "../middleware/rbac.js";
@@ -36,10 +37,11 @@ router.use(apiLimiter);
 
 // ========== EXISTING ROUTES (Working) ==========
 
-// ✅ Upload & Transcribe Meeting (from UploadMeetings page)
+// ✅ Upload & Transcribe Meeting (from UploadMeetings page) - admin only
 router.post(
   "/upload",
   userAuth,
+  requireAdmin,
   uploadLimiter,
   requireOrgMembership,
   requirePermission("meetings", "create"),
@@ -74,13 +76,16 @@ router.delete(
 
 // ========== NEW ROUTES (for CreateMeeting.jsx) ==========
 
+// ✅ Create/Schedule Meeting (from CreateMeeting Schedule section) - admin only
+router.post("/create", userAuth, requireAdmin, writeLimiter, createMeeting);
 // ✅ Create/Schedule Meeting (from CreateMeeting Schedule section)
 router.post("/create", userAuth, writeLimiter, requireOrgMembership, requirePermission("meetings", "create"), createMeeting);
 
-// ✅ Upload Audio for existing meeting (from CreateMeeting Upload section)
+// ✅ Upload Audio for existing meeting (from CreateMeeting Upload section) - admin only
 router.post(
   "/upload-audio",
   userAuth,
+  requireAdmin,
   uploadLimiter,
   requireOrgMembership,
   requirePermission("meetings", "create"),
