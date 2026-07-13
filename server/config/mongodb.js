@@ -9,7 +9,8 @@ const connectDB = async () => {
       : process.env.MONGODB_URI;
 
     await mongoose.connect(`${uri}/mern_auth`);
-    console.log("Mongo URI:", uri);
+    const sanitizedUri = uri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@)/, "$1****$3");
+    console.log("Mongo URI:", sanitizedUri);
   } catch (error) {
     console.error("MongoDB connection failed:", error.message);
     console.warn("⚠️  Server running without database connection. Some features may not work.");

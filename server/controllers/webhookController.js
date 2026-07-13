@@ -1,7 +1,57 @@
 import mongoose from "mongoose";
+import { URL } from "url";
 import Webhook from "../models/Webhook.js";
 import Membership from "../models/membershipModel.js";
 import Organization from "../models/organizationModel.js";
+
+const isSafeWebhookUrl = (urlStr) => {
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Block localhost names
+    if (hostname === "localhost" || hostname === "localhost.localdomain") {
+      return false;
+    }
+
+    // Block IPv6 localhost
+    if (hostname === "[::1]" || hostname === "::1") {
+      return false;
+    }
+
+    // Block IPv4 loopback, private, and link-local ranges
+    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = hostname.match(ipv4Regex);
+    if (match) {
+      const parts = match.slice(1).map(Number);
+      if (parts.some((p) => p < 0 || p > 255)) return false;
+
+      const [p1, p2] = parts;
+      
+      // 127.x.x.x (Loopback)
+      if (p1 === 127) return false;
+      
+      // 10.x.x.x (Private class A)
+      if (p1 === 10) return false;
+      
+      // 172.16.x.x - 172.31.x.x (Private class B)
+      if (p1 === 172 && p2 >= 16 && p2 <= 31) return false;
+      
+      // 192.168.x.x (Private class C)
+      if (p1 === 192 && p2 === 168) return false;
+      
+      // 169.254.x.x (Link-local)
+      if (p1 === 169 && p2 === 254) return false;
+      
+      // 0.x.x.x or broadcast/any
+      if (p1 === 0) return false;
+    }
+
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
 
 // Helper to verify user permissions (must be Owner or Admin of the target Organization)
 const hasAdminPermission = async (userId, organizationId) => {
@@ -46,6 +96,13 @@ export const createWebhook = async (req, res) => {
 
     if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
       return res.status(400).json({ success: false, message: "Target URL must start with http:// or https://." });
+    }
+
+    if (!isSafeWebhookUrl(targetUrl.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Target URL must be a public, safe address. Local/private addresses are not permitted.",
+      });
     }
 
     if (!organizationId || !mongoose.Types.ObjectId.isValid(organizationId)) {
@@ -172,6 +229,12 @@ export const updateWebhook = async (req, res) => {
       }
       if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
         return res.status(400).json({ success: false, message: "Target URL must start with http:// or https://." });
+      }
+      if (!isSafeWebhookUrl(targetUrl.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: "Target URL must be a public, safe address. Local/private addresses are not permitted.",
+        });
       }
       webhook.targetUrl = targetUrl.trim();
     }

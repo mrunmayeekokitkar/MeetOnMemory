@@ -2,6 +2,7 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import axios from "axios";
+import { jest } from "@jest/globals";
 import { app } from "../server.js";
 import User from "../models/userModel.js";
 import Organization from "../models/organizationModel.js";
@@ -200,8 +201,12 @@ describe("Webhook Endpoints & Dispatcher", () => {
         organization: organization._id,
       });
 
-      // Give event listeners a split second to fire async
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait deterministically for axiosSpy to have been called (up to 1000ms)
+      let attempts = 0;
+      while (axiosSpy.mock.calls.length === 0 && attempts < 100) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        attempts++;
+      }
 
       expect(axiosSpy).toHaveBeenCalledTimes(1);
       const callArgs = axiosSpy.mock.calls[0];

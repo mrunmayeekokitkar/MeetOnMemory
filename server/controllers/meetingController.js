@@ -266,6 +266,13 @@ export const uploadMeeting = async (req, res) => {
       status: "completed",
     });
 
+    // Trigger internal event for webhooks
+    try {
+      eventBus.emit("meeting.created", meeting);
+    } catch (evtErr) {
+      console.error("⚠️ Failed to emit meeting.created event:", evtErr.message);
+    }
+
     // Index meeting for semantic search (non-blocking)
     try {
       await indexMeeting(meeting);
@@ -700,6 +707,7 @@ ${textToSummarize}
         // User provided transcript only (no existing meeting)
         meetingToUpdate = await Meeting.create({
           uploadedBy: req.user?.id || req.user?._id,
+          organization: req.user?.organization || null,
           title: mom.title,
           date: new Date(date),
           transcript: textToSummarize,
