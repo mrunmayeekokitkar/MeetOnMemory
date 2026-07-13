@@ -2,6 +2,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppContent from "../context/AppContent";
+import { useRBAC } from "../hooks/useRBAC.js";
 import useTheme from "../context/useTheme.jsx";
 import { toast } from "react-toastify";
 import { notificationApi, authApi } from "../services";
@@ -39,6 +40,7 @@ const Navbar = () => {
   const location = useLocation();
   const { backendUrl, userData, setUserData, setIsLoggedin } =
     useContext(AppContent);
+  const { hasPermission } = useRBAC();
   const { theme, toggleTheme, mounted } = useTheme();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -277,6 +279,15 @@ const Navbar = () => {
     { label: "Organizations", href: "/organizations", icon: Building2, adminOnly: true },
     { label: "AI Search", href: "/ai-search", icon: Search },
   ];
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: { resource: "reports", action: "view" } },
+    { label: "Meetings", href: "/meetings", icon: Calendar, permission: { resource: "meetings", action: "view" } },
+    { label: "Tasks", href: "/tasks", icon: CheckSquare, permission: { resource: "tasks", action: "view" } },
+    { label: "Compliance", href: "/policy-compliance", icon: ShieldAlert, permission: { resource: "policies", action: "view" } },
+    { label: "Calendar", href: "/calendar", icon: CalendarDays, permission: { resource: "calendar", action: "view" } },
+    { label: "Team Members", href: "/team-members", icon: Users, permission: { resource: "team_members", action: "view" } },
+    { label: "Organizations", href: "/organizations", icon: Building2, permission: { resource: "organizations", action: "view" } },
+    { label: "AI Search", href: "/ai-search", icon: Search, permission: { resource: "ai_search", action: "search" } },
+  ].filter(link => !link.permission || hasPermission(link.permission.resource, link.permission.action));
 
   const visibleLinks = appLinks.filter(
     (link) => !link.adminOnly || userData?.role === "admin"

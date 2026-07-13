@@ -12,6 +12,11 @@ import {
 import userAuth from "../middleware/userAuth.js";
 import { apiLimiter } from "../middleware/rateLimiter.js";
 import { requireAdmin } from "../middleware/rbac.js";
+import { apiLimiter, writeLimiter } from "../middleware/rateLimiter.js";
+import {
+  requirePermission,
+  requireOrgMembership,
+} from "../middleware/rbac.js";
 
 const router = express.Router();
 
@@ -25,6 +30,12 @@ router.get("/user", userAuth, getUserInvitations);
 router.post("/:token/accept", userAuth, acceptInvitation);
 router.post("/:token/reject", userAuth, rejectInvitation);
 router.delete("/:id", userAuth, requireAdmin, revokeInvitation);
+router.post("/", userAuth, writeLimiter, requirePermission("team_members", "invite"), createInvitation);
+router.get("/organization/:organizationId", userAuth, requireOrgMembership, requirePermission("team_members", "view"), getOrganizationInvitations);
+router.get("/user", userAuth, requirePermission("team_members", "view"), getUserInvitations);
+router.post("/:token/accept", userAuth, writeLimiter, requirePermission("organizations", "leave"), acceptInvitation);
+router.post("/:token/reject", userAuth, writeLimiter, requirePermission("organizations", "leave"), rejectInvitation);
+router.delete("/:id", userAuth, writeLimiter, requirePermission("team_members", "remove"), revokeInvitation);
 router.get("/:token", getInvitationByToken);
 
 export default router;
