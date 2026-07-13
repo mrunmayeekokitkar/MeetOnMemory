@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import AppContent from "../context/AppContent";
-import { useRBAC } from "../context/RBACContext.jsx";
+import { useRBAC } from "../hooks/useRBAC.js";
 
 const ProtectedRoute = ({ children, requiredPermission, resource, action }) => {
   const { isLoggedin, userData, isLoading } = useContext(AppContent);

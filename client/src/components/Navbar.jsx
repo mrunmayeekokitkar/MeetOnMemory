@@ -2,7 +2,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppContent from "../context/AppContent";
-import { useRBAC } from "../context/RBACContext.jsx";
+import { useRBAC } from "../hooks/useRBAC.js";
 import useTheme from "../context/useTheme.jsx";
 import { toast } from "react-toastify";
 import { notificationApi, authApi } from "../services";
