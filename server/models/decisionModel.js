@@ -71,8 +71,13 @@ const decisionSchema = new mongoose.Schema(
       ref: "Organization",
       default: null,
     },
-    embedding: { type: [Number], default: [] }, // cached vector for similarity checks
-    relatesTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "Decision" }], // links to prior related decisions
+    embedding: { type: [Number], default: [] },
+
+    relatesTo: {
+      type: [relationshipSchema],
+      default: [],
+    },
+
     resolvedAt: { type: Date, default: null },
 
     // --- Memory Consolidation fields ---
@@ -99,4 +104,5 @@ const decisionSchema = new mongoose.Schema(
 
 const Decision =
   mongoose.models.Decision || mongoose.model("Decision", decisionSchema);
+
 export default Decision;

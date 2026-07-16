@@ -10,28 +10,109 @@ import {
   detectResolutions,
 } from "./knowledgeGraphService.js";
 import { createAndPushNotification } from "./notificationService.js";
+import userModel from "../models/userModel.js";
+import membershipModel from "../models/membershipModel.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+import jwt from "jsonwebtoken";
+import transporter from "../config/nodeMailer.js";
+
+const require = createRequire(import.meta.url);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const redisUri = process.env.REDIS_URI;
 
 // BullMQ requires maxRetriesPerRequest to be null
-const connection = redisUri
-  ? new Redis(redisUri, {
-      maxRetriesPerRequest: null,
-      family: 0, // Helps with DNS resolution for some cloud providers
-    })
-  : null;
+let _producerConnection = null;
+let _workerConnection = null;
+let _aiQueueInstance = null;
+let _dataExportQueueInstance = null;
 
-if (connection) {
-  connection.on("error", (err) => {
-    console.error("⚠️ BullMQ Redis Connection Error:", err.message);
-  });
+function getProducerConnection() {
+  if (!redisUri) return null;
+  if (!_producerConnection) {
+    _producerConnection = new Redis(redisUri, {
+      maxRetriesPerRequest: 3, // Fail fast for requests adding tasks to queue
+      family: 0,
+    });
+    _producerConnection.on("error", (err) => {
+      console.error("⚠️ BullMQ Producer Redis Connection Error:", err.message);
+    });
+  }
+  return _producerConnection;
 }
 
-export const aiQueue = connection
-  ? new Queue("ai-mom-generation", { connection })
-  : null;
+function getWorkerConnection() {
+  if (!redisUri) return null;
+  if (!_workerConnection) {
+    _workerConnection = new Redis(redisUri, {
+      maxRetriesPerRequest: null, // Unlimited retries for background workers
+      family: 0, // Helps with DNS resolution for some cloud providers
+    });
+    _workerConnection.on("error", (err) => {
+      console.error("⚠️ BullMQ Worker Redis Connection Error:", err.message);
+    });
+  }
+  return _workerConnection;
+}
+
+function getAiQueue() {
+  if (!redisUri) return null;
+  if (!_aiQueueInstance) {
+    const conn = getProducerConnection();
+    if (conn) {
+      _aiQueueInstance = new Queue("ai-mom-generation", { connection: conn });
+    }
+  }
+  return _aiQueueInstance;
+}
+
+function getDataExportQueue() {
+  if (!redisUri) return null;
+  if (!_dataExportQueueInstance) {
+    const conn = getProducerConnection();
+    if (conn) {
+      _dataExportQueueInstance = new Queue("data-export-queue", { connection: conn });
+    }
+  }
+  return _dataExportQueueInstance;
+}
+
+// Wrapper to preserve syntax compatibility
+export const aiQueue = {
+  add: async (...args) => {
+    const q = getAiQueue();
+    if (!q) {
+      console.warn("⚠️ Queue operation ignored: Redis is not configured.");
+      return null;
+    }
+    return await q.add(...args);
+  },
+  get isActive() {
+    return getAiQueue() !== null;
+  }
+};
+
+export const dataExportQueue = {
+  add: async (...args) => {
+    const q = getDataExportQueue();
+    if (!q) {
+      console.warn("⚠️ Queue operation ignored: Redis is not configured.");
+      return null;
+    }
+    return await q.add(...args);
+  },
+  get isActive() {
+    return getDataExportQueue() !== null;
+  }
+};
 
 export const initAIWorker = (app) => {
+  const connection = getWorkerConnection();
   if (!connection) {
     console.warn("⚠️ Redis not configured. AI Worker will not start.");
     return;
@@ -42,7 +123,7 @@ export const initAIWorker = (app) => {
     async (job) => {
       const { meetingId, transcript, date, title, userId } = job.data;
       const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-      const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+      const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
       const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
       let textToSummarize = (transcript || "").trim();
@@ -134,7 +215,7 @@ ${textToSummarize}
       } catch (gemErr) {
         console.error(
           "❌ Gemini API error, falling back to HuggingFace:",
-          gemErr.message
+          gemErr.message,
         );
 
         try {
@@ -150,7 +231,7 @@ ${textToSummarize}
                 "Content-Type": "application/json",
               },
               timeout: 120000,
-            }
+            },
           );
 
           const hfText =
@@ -201,19 +282,25 @@ ${textToSummarize}
 
         if (mom.agenda.length) {
           humanReadable += "📋 Agenda:\n";
-          mom.agenda.forEach((item, i) => (humanReadable += `${i + 1}. ${item}\n`));
+          mom.agenda.forEach(
+            (item, i) => (humanReadable += `${i + 1}. ${item}\n`),
+          );
           humanReadable += "\n";
         }
 
         if (mom.key_discussions.length) {
           humanReadable += "💬 Key Discussions:\n";
-          mom.key_discussions.forEach((d, i) => (humanReadable += `${i + 1}. ${d}\n`));
+          mom.key_discussions.forEach(
+            (d, i) => (humanReadable += `${i + 1}. ${d}\n`),
+          );
           humanReadable += "\n";
         }
 
         if (mom.decisions.length) {
           humanReadable += "✅ Decisions:\n";
-          mom.decisions.forEach((d, i) => (humanReadable += `${i + 1}. ${d}\n`));
+          mom.decisions.forEach(
+            (d, i) => (humanReadable += `${i + 1}. ${d}\n`),
+          );
           humanReadable += "\n";
         }
 
@@ -236,7 +323,9 @@ ${textToSummarize}
         }
         if (mom.questions_raised.length) {
           humanReadable += "❓ Questions Raised:\n";
-          mom.questions_raised.forEach((q, i) => (humanReadable += `${i + 1}. ${q}\n`));
+          mom.questions_raised.forEach(
+            (q, i) => (humanReadable += `${i + 1}. ${q}\n`),
+          );
           humanReadable += "\n";
         }
         if (mom.keywords.length) {
@@ -280,7 +369,10 @@ ${textToSummarize}
           }
           eventBus.emit("mom.generated", meetingToUpdate);
         } catch (evtErr) {
-          console.error("⚠️ Failed to emit webhook events from queue:", evtErr.message);
+          console.error(
+            "⚠️ Failed to emit webhook events from queue:",
+            evtErr.message,
+          );
         }
 
         if (meetingToUpdate) {
@@ -288,7 +380,10 @@ ${textToSummarize}
             await detectResolutions(meetingToUpdate, mom);
             await processStructuredMoM(meetingToUpdate, mom);
           } catch (kgError) {
-            console.error("⚠️ Knowledge graph processing failed (non-fatal):", kgError);
+            console.error(
+              "⚠️ Knowledge graph processing failed (non-fatal):",
+              kgError,
+            );
           }
 
           const io = app.get("io");
@@ -301,7 +396,7 @@ ${textToSummarize}
                 `MoM for "${meetingToUpdate.title}" is ready.`,
                 "ai_processing",
                 `/meeting/${meetingToUpdate._id}`,
-                "View MoM"
+                "View MoM",
               );
               // Send Socket.IO direct notification
               io.to(userId.toString()).emit("mom-generation-complete", {
@@ -311,17 +406,20 @@ ${textToSummarize}
                 mom: meetingToUpdate.structuredMoM,
               });
             } catch (notifErr) {
-              console.error("⚠️ Notification error (continuing):", notifErr.message);
+              console.error(
+                "⚠️ Notification error (continuing):",
+                notifErr.message,
+              );
             }
           }
         }
-        
+
         return { success: true, meetingId: meetingToUpdate?._id };
       }
 
       throw new Error("No summary generated");
     },
-    { connection, concurrency: 5 } // Handle up to 5 concurrent jobs
+    { connection, concurrency: 5 }, // Handle up to 5 concurrent jobs
   );
 
   worker.on("completed", (job) => {
@@ -332,5 +430,119 @@ ${textToSummarize}
     console.error(`❌ Job ${job.id} failed with error:`, err.message);
   });
 
-  console.log("✅ AI Worker initialized and listening to ai-mom-generation queue");
+  console.log(
+    "✅ AI Worker initialized and listening to ai-mom-generation queue",
+  );
+};
+
+export const initDataExportWorker = (app) => {
+  const connection = getWorkerConnection();
+  if (!connection) {
+    console.warn("⚠️ Redis not configured. Data Export Worker will not start.");
+    return;
+  }
+
+  const worker = new Worker(
+    "data-export-queue",
+    async (job) => {
+      const { userId, email } = job.data;
+      console.log(`📦 Starting data export for user ${userId}...`);
+
+      try {
+        // Fetch User Data
+        const user = await userModel.findById(userId).lean();
+        if (!user) throw new Error("User not found");
+
+        // Fetch Meetings
+        const meetings = await Meeting.find({ uploadedBy: userId }).lean();
+
+        // Fetch Memberships
+        const memberships = await membershipModel.find({ user: userId }).lean();
+
+        const exportDir = path.join(__dirname, "..", "uploads", "exports");
+        if (!fs.existsSync(exportDir)) {
+          fs.mkdirSync(exportDir, { recursive: true });
+        }
+
+        const fileName = `export_${userId}_${Date.now()}.zip`;
+        const filePath = path.join(exportDir, fileName);
+
+        // archiver v8+ is a pure ES Module — must be loaded via dynamic import()
+        const { default: archiver } = await import("archiver");
+
+        await new Promise((resolve, reject) => {
+          const output = fs.createWriteStream(filePath);
+          const archive = archiver("zip", { zlib: { level: 9 } });
+
+          output.on("close", resolve);
+          archive.on("error", reject);
+          archive.on("warning", (err) => {
+            if (err.code === "ENOENT") console.warn(err);
+            else reject(err);
+          });
+
+          archive.pipe(output);
+          archive.append(JSON.stringify(user, null, 2), { name: "user_profile.json" });
+          archive.append(JSON.stringify(meetings, null, 2), { name: "meetings.json" });
+          archive.append(JSON.stringify(memberships, null, 2), { name: "memberships.json" });
+          archive.finalize();
+        });
+
+        console.log(`✅ Data export for user ${userId} saved to ${filePath}`);
+
+        // Generate Secure Download Link
+        const jwtSecret = process.env.JWT_SECRET || "fallback_secret";
+        const downloadToken = jwt.sign({ userId, fileName }, jwtSecret, { expiresIn: "24h" });
+        
+        // In production, BASE_URL should be configured correctly in .env
+        const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+        const downloadUrl = `${baseUrl}/api/user/download-export/${downloadToken}`;
+
+        // Send Email
+        const mailOptions = {
+          from: process.env.SMTP_USER || "no-reply@meetonmemory.com",
+          to: email,
+          subject: "Your Data Export is Ready",
+          html: `
+            <h2>Data Export Completed</h2>
+            <p>Your requested data export is ready. You can download it using the link below:</p>
+            <p><a href="${downloadUrl}">Download Data Export</a></p>
+            <p><strong>Note:</strong> This link will expire in 24 hours.</p>
+          `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`📧 Notification email sent to ${email}`);
+
+        const io = app.get("io");
+        if (io) {
+          await createAndPushNotification(
+            io,
+            userId,
+            "Data Export Ready",
+            "Your data export has been completed and emailed to you.",
+            "system",
+            downloadUrl,
+            "Download"
+          );
+        }
+
+        return { success: true, fileName };
+      } catch (error) {
+        console.error(`❌ Data export failed for user ${userId}:`, error.message);
+        throw error;
+      }
+    },
+    { connection, concurrency: 2 }
+  );
+
+  worker.on("completed", (job) => {
+    console.log(`✅ Data Export Job ${job.id} completed successfully`);
+  });
+
+  worker.on("failed", (job, err) => {
+    console.error(`❌ Data Export Job ${job.id} failed with error:`, err.message);
+  });
+
+  console.log("✅ Data Export Worker initialized and listening to data-export-queue");
 };

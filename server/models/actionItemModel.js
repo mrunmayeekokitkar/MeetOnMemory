@@ -72,10 +72,24 @@ const actionItemSchema = new mongoose.Schema(
       ref: "Organization",
       default: null,
     },
-    dueDate: { type: Date, default: null },
-    embedding: { type: [Number], default: [] },
-    relatesTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "ActionItem" }],
-    resolvedAt: { type: Date, default: null },
+    dueDate: {
+      type: Date,
+      default: null,
+    },
+    embedding: {
+      type: [Number],
+      default: [],
+    },
+
+    relatesTo: {
+      type: [relationshipSchema],
+      default: [],
+    },
+
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
     resolvedInMeetingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Meeting",
@@ -105,5 +119,7 @@ const actionItemSchema = new mongoose.Schema(
 );
 
 const ActionItem =
-  mongoose.models.ActionItem || mongoose.model("ActionItem", actionItemSchema);
+  mongoose.models.ActionItem ||
+  mongoose.model("ActionItem", actionItemSchema);
+
 export default ActionItem;
