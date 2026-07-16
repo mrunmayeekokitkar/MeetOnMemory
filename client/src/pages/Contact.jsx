@@ -22,6 +22,44 @@ import {
   LifeBuoy
 } from "lucide-react";
 
+// Support FAQs data
+const faqs = [
+  {
+    q: "How can I change my billing or upgrade my transcription limit?",
+    a: "Organization owners can manage subscriptions directly under the Organization Settings > Billing panel. You can select higher tiers or purchase additional top-up AI credits using a credit card.",
+  },
+  {
+    q: "How do I request a custom DPA or SOC 2 report?",
+    a: "Enterprise subscribers can contact our security team at security@meetonmemory.com. We can share standard Data Processing Addendums (DPA) and audit compliance documents upon verification.",
+  },
+  {
+    q: "What audio formats does the meeting transcription service support?",
+    a: "We support MP3, MP4, WAV, M4A, AAC, and WEBM file formats. The maximum single-file upload size is 250MB for standard accounts and 1GB for enterprise accounts.",
+  },
+  {
+    q: "Can I host a self-hosted or on-premise instance of MeetOnMemory?",
+    a: "Currently, we operate as a fully managed SaaS cloud service to maintain stable vector databases and API integrations. Contact sales@meetonmemory.com if you have strict dedicated-tenant hosting requirements.",
+  },
+];
+
+// Locations data
+const locations = [
+  {
+    city: "San Francisco",
+    address: "548 Market St, Suite 4839, San Francisco, CA 94104",
+    phone: "+1 (415) 890-3450",
+    email: "sf@meetonmemory.com",
+    hours: "9:00 AM - 6:00 PM PST",
+  },
+  {
+    city: "Mumbai",
+    address: "Godrej Coliseum, Behind Everard Nagar, Sion, Mumbai 400022",
+    phone: "+91 22 6789 0122",
+    email: "mumbai@meetonmemory.com",
+    hours: "9:30 AM - 6:30 PM IST",
+  },
+];
+
 const Contact = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFaq, setExpandedFaq] = useState(null);
@@ -52,44 +90,6 @@ const Contact = () => {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages, botTyping]);
-
-  // Support FAQs data
-  const faqs = [
-    {
-      q: "How can I change my billing or upgrade my transcription limit?",
-      a: "Organization owners can manage subscriptions directly under the Organization Settings > Billing panel. You can select higher tiers or purchase additional top-up AI credits using a credit card.",
-    },
-    {
-      q: "How do I request a custom DPA or SOC 2 report?",
-      a: "Enterprise subscribers can contact our security team at security@meetonmemory.com. We can share standard Data Processing Addendums (DPA) and audit compliance documents upon verification.",
-    },
-    {
-      q: "What audio formats does the meeting transcription service support?",
-      a: "We support MP3, MP4, WAV, M4A, AAC, and WEBM file formats. The maximum single-file upload size is 250MB for standard accounts and 1GB for enterprise accounts.",
-    },
-    {
-      q: "Can I host a self-hosted or on-premise instance of MeetOnMemory?",
-      a: "Currently, we operate as a fully managed SaaS cloud service to maintain stable vector databases and API integrations. Contact sales@meetonmemory.com if you have strict dedicated-tenant hosting requirements.",
-    },
-  ];
-
-  // Locations data
-  const locations = [
-    {
-      city: "San Francisco",
-      address: "548 Market St, Suite 4839, San Francisco, CA 94104",
-      phone: "+1 (415) 890-3450",
-      email: "sf@meetonmemory.com",
-      hours: "9:00 AM - 6:00 PM PST",
-    },
-    {
-      city: "Mumbai",
-      address: "Godrej Coliseum, Behind Everard Nagar, Sion, Mumbai 400022",
-      phone: "+91 22 6789 0122",
-      email: "mumbai@meetonmemory.com",
-      hours: "9:30 AM - 6:30 PM IST",
-    },
-  ];
 
   // Filter FAQs based on search query
   const filteredFaqs = useMemo(() => {
