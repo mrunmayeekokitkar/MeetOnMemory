@@ -123,20 +123,21 @@ if (process.env.NODE_ENV !== "test") {
   server.listen(PORT, () => {
     console.log(`🚀 MeetOnMemory Server running on port ${PORT}`);
 
-    // Asynchronously initialize background services after server starts listening
-    const safeInit = async (name, initFn) => {
-      try {
-        await initFn();
-      } catch (err) {
-        console.error(`⚠️ Failed to initialize background service "${name}":`, err.message || err);
-      }
-    };
+    setImmediate(() => {
+      const safeInit = async (name, initFn) => {
+        try {
+          await initFn();
+        } catch (err) {
+          console.error(`⚠️ Failed to initialize background service "${name}":`, err.message || err);
+        }
+      };
 
-    safeInit("Redis", () => initRedis());
-    safeInit("AI Worker", () => initAIWorker(app));
-    safeInit("Data Export Worker", () => initDataExportWorker(app));
-    safeInit("Webhook Worker", () => initWebhookWorker());
-    safeInit("Vector Store", () => initVectorStore());
+      safeInit("Redis", () => initRedis());
+      safeInit("AI Worker", () => initAIWorker(app));
+      safeInit("Data Export Worker", () => initDataExportWorker(app));
+      safeInit("Webhook Worker", () => initWebhookWorker());
+      safeInit("Vector Store", () => initVectorStore());
+    });
   });
 }
 
