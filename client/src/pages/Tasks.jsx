@@ -131,6 +131,7 @@ const Tasks = () => {
             organization:
               item.sourceMeetingId?.organization?.name || "Personal",
             description: item.description || item.text,
+            importanceScore: item.importanceScore ?? null,
           }));
           setTasks(items);
         } else {
@@ -219,6 +220,10 @@ const Tasks = () => {
       }
       case "alphabetical": {
         comparison = a.title.localeCompare(b.title);
+        break;
+      }
+      case "importance": {
+        comparison = (b.importanceScore ?? 0) - (a.importanceScore ?? 0);
         break;
       }
       default: {
@@ -409,6 +414,7 @@ const Tasks = () => {
               { field: "dueDate", label: "Due Date" },
               { field: "createdDate", label: "Recently Created" },
               { field: "priority", label: "Priority" },
+              { field: "importance", label: "Importance" },
               { field: "status", label: "Status" },
               { field: "alphabetical", label: "A-Z" },
             ].map((sort) => (
@@ -507,6 +513,14 @@ const Tasks = () => {
                         >
                           {priorityStyle.label}
                         </span>
+                        {typeof task.importanceScore === "number" && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 shrink-0"
+                            title="Memory importance score"
+                          >
+                            {task.importanceScore}/100
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-400">

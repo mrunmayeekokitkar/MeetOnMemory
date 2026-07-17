@@ -80,6 +80,26 @@ const decisionSchema = new mongoose.Schema(
 
     resolvedAt: { type: Date, default: null },
 
+    // --- Dynamic memory importance scoring (Issue #269) ---
+    accessCount: { type: Number, default: 0 },
+    lastAccessedAt: { type: Date, default: null },
+    feedbackScore: { type: Number, default: 0 }, // sum of ratings (1-5 each)
+    feedbackCount: { type: Number, default: 0 },
+    importanceScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+      index: true,
+    },
+    importanceFactors: {
+      accessFrequency: { type: Number, default: 0 },
+      recency: { type: Number, default: 0 },
+      graphDegree: { type: Number, default: 0 },
+      aiConfidence: { type: Number, default: 0 },
+      userFeedback: { type: Number, default: 0 },
+    },
+    importanceUpdatedAt: { type: Date, default: null },
     // --- Memory Consolidation fields ---
     // Alternate phrasings that were detected as duplicates/paraphrases of
     // this canonical memory and folded into it.
@@ -104,5 +124,7 @@ const decisionSchema = new mongoose.Schema(
 
 const Decision =
   mongoose.models.Decision || mongoose.model("Decision", decisionSchema);
+export default Decision;
+
 
 export default Decision;
