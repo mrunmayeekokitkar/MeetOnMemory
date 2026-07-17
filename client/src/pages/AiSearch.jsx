@@ -12,7 +12,7 @@ import { apiClient } from "../services";
 
 // Modal Component for showing full details
 const ResultModal = ({ result, onClose }) => {
-   const { t } = useTranslation();
+  const { t } = useTranslation();
   if (!result) return null;
 
   return (
@@ -124,7 +124,7 @@ const AiSearch = () => {
 
   const handleSearch = async () => {
     if (!query.trim()) {
-      setError("Please enter a search query");
+      setError(t("aiSearch.enterQuery"));
       return;
     }
 
@@ -164,11 +164,11 @@ const AiSearch = () => {
       if (err.message === "Failed to fetch") {
         setError(t("aiSearch.unableToConnect"));
       } else if (err.message.includes("500")) {
-        setError("Server error. Please try again later.");
+        setError(t("aiSearch.serverError"));
       } else if (err.message.includes("404")) {
-        setError("Search service not found. Please contact support.");
+        setError(t("aiSearch.serviceNotFound"));
       } else {
-        setError(err.message || "Failed to fetch results. Please try again.");
+        setError(err.message || t("aiSearch.fetchFailed"));
       }
     } finally {
       setLoading(false);
