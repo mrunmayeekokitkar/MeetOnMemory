@@ -1,6 +1,11 @@
 import Decision from "../models/decisionModel.js";
 import ActionItem from "../models/actionItemModel.js";
 import { embedText } from "../utils/embeddingUtils.js";
+<<<<<<< ours
+=======
+import { calculateRelationshipConfidence } from "../utils/relationshipScoring.js";
+import { applyImportanceScore } from "./importanceScoringService.js";
+>>>>>>> theirs
 
 const SIMILARITY_THRESHOLD = 0.85; // conservative, per issue's technical considerations
 
@@ -38,9 +43,27 @@ async function findBestMatch(Model, text, embedding, organization) {
     }
   }
 
+<<<<<<< ours
   return bestScore >= SIMILARITY_THRESHOLD ? best : null;
 }
 
+=======
+  if (bestScore < SIMILARITY_THRESHOLD) {
+    return null;
+  }
+
+  return {
+    match: best,
+    similarity: bestScore,
+    confidence: calculateRelationshipConfidence({
+      similarity: bestScore,
+      createdAt: best.createdAt,
+      explicitSignal:
+        best.status === "resolved" || best.status === "superseded",
+    }),
+  };
+}
+>>>>>>> theirs
 /**
  * Called after a meeting's structuredMoM is generated/updated.
  * Extracts decisions/action_items, embeds them, links to prior related entries.
@@ -71,14 +94,36 @@ export async function processStructuredMoM(meeting, mom) {
       sourceMeetingId: meeting._id,
       organization,
       embedding,
+<<<<<<< ours
       relatesTo: match ? [match._id] : [],
     });
 
     if (match) {
       match.relatesTo.push(decision._id);
       await match.save();
+=======
+      relatesTo:
+        match && match.confidence >= CONFIDENCE_THRESHOLD
+          ? [
+              {
+                target: match.match._id,
+                confidence: match.confidence,
+                computedAt: new Date(),
+              },
+            ]
+          : [],
+    });
+
+    if (match && match.confidence >= CONFIDENCE_THRESHOLD) {
+      upsertRelationship(match.match, decision._id, match.confidence);
+
+      // The matched decision just gained a relationship, so its graph
+      // degree (and therefore importance score) changed too.
+      await applyImportanceScore(match.match);
+>>>>>>> theirs
     }
 
+    await applyImportanceScore(decision);
     results.decisions.push(decision);
   }
 
@@ -121,14 +166,38 @@ export async function processStructuredMoM(meeting, mom) {
       sourceMeetingId: meeting._id,
       organization,
       embedding,
+<<<<<<< ours
       relatesTo: match ? [match._id] : [],
     });
 
     if (match) {
       match.relatesTo.push(actionItem._id);
       await match.save();
+=======
+      relatesTo:
+        match && match.confidence >= CONFIDENCE_THRESHOLD
+          ? [
+              {
+                target: match.match._id,
+                confidence: match.confidence,
+                computedAt: new Date(),
+              },
+            ]
+          : [],
+    });
+
+    if (match) {
+      if (match.confidence >= CONFIDENCE_THRESHOLD) {
+        upsertRelationship(match.match, actionItem._id, match.confidence);
+
+        // The matched action item just gained a relationship, so its
+        // graph degree (and therefore importance score) changed too.
+        await applyImportanceScore(match.match);
+      }
+>>>>>>> theirs
     }
 
+    await applyImportanceScore(actionItem);
     results.actionItems.push(actionItem);
   }
 
@@ -153,8 +222,17 @@ export async function getDecisionLineage(decisionId) {
     if (!decision) return;
     chain.push(decision);
 
+<<<<<<< ours
     for (const relatedId of decision.relatesTo) {
       await walk(relatedId);
+=======
+    const sortedRelations = [...decision.relatesTo]
+      .filter((r) => r.confidence >= CONFIDENCE_THRESHOLD)
+      .sort((a, b) => b.confidence - a.confidence);
+
+    for (const relation of sortedRelations) {
+      await walk(relation.target);
+>>>>>>> theirs
     }
   }
 
@@ -202,7 +280,9 @@ export async function detectResolutions(meeting, mom) {
       item.status = "resolved";
       item.resolvedAt = new Date();
       item.resolvedInMeetingId = meeting._id;
-      await item.save();
+      item.accessCount = (item.accessCount || 0) + 1;
+      item.lastAccessedAt = new Date();
+      await applyImportanceScore(item);
       resolvedNowIds.push(item._id);
     }
   }
