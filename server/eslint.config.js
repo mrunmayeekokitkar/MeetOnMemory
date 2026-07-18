@@ -26,6 +26,10 @@ export default [
         clearInterval: "readonly",
         URL: "readonly",
         fetch: "readonly",
+        URLSearchParams: "readonly",
+        AbortController: "readonly",
+        TextEncoder: "readonly",
+        TextDecoder: "readonly",
       },
     },
     rules: {

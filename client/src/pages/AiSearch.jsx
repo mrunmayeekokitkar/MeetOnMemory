@@ -134,8 +134,15 @@ const AiSearch = () => {
     setHasSearched(true);
 
     try {
-      const res = await apiClient.post("/api/ai", { query, filters });
-      const data = res.data;
+      if (searchMode === "hybrid") {
+        const res = await apiClient.post("/api/search/hybrid", {
+          query,
+          ...hybridWeights,
+        });
+        setResults(res.data.results || []);
+      } else {
+        const res = await apiClient.post("/api/ai-search", { query, filters });
+        const data = res.data;
 
         let sortedResults = data.results || [];
 

@@ -25,4 +25,17 @@ router.post(
   semanticSearch,
 );
 
+// 🔹 POST /api/search/hybrid
+// Semantic vector search fused with knowledge-graph multi-hop traversal.
+// Additive - does not change the behavior of POST /api/search above.
+// Expects: { query: "...", topK?, semanticWeight?, graphWeight?, maxHops? }
+router.post(
+  "/hybrid",
+  apiLimiter,
+  userAuth,
+  requirePermission("ai_search", "search"),
+  cacheSearch,
+  hybridSearch,
+);
+
 export default router;
