@@ -1,5 +1,4 @@
 import React from "react";
-import ExplanationPanel from "./ExplanationPanel.jsx";
 
 const SearchResultCard = ({
   result,
@@ -94,8 +93,6 @@ const SearchResultCard = ({
             </span>
           ))}
       </div>
-
-      <ExplanationPanel explanation={result.explanation} />
 
       <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
         <div className="text-xs text-gray-500">

@@ -1,5 +1,4 @@
 import React from "react";
-import ExplanationPanel from "./ExplanationPanel.jsx";
 
 const TYPE_LABELS = {
   meeting: "Meeting",
@@ -51,7 +50,6 @@ const HybridResultCard = ({ result, onOpenMeeting }) => {
     finalScore = 0,
     hops = 0,
     sourceMeeting,
-    explanation,
   } = result;
 
   const foundVia =
@@ -100,8 +98,6 @@ const HybridResultCard = ({ result, onOpenMeeting }) => {
         />
         <ScoreBar label="Graph" value={graphScore} colorClass="bg-indigo-500" />
       </div>
-
-      <ExplanationPanel explanation={explanation} />
 
       <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
         <div className="flex items-center gap-3">
