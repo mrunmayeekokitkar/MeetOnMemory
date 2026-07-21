@@ -54,6 +54,7 @@ router.post(
   "/summarize",
   userAuth,
   writeLimiter,
+  requireOrgMembership,
   requirePermission("meetings", "transcribe"),
   summarizeMeeting,
 );
@@ -133,6 +134,7 @@ router.post(
 router.post(
   "/search",
   userAuth,
+  requireOrgMembership,
   requirePermission("meetings", "view"),
   searchMeetingsByText,
 );

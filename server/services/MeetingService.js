@@ -251,6 +251,12 @@ export const generateMeetingMoM = async (
   title,
   io,
 ) => {
+  const user = await User.findById(userId);
+  if (!user) throw new ForbiddenError("User not found");
+  if (!user.organization) {
+    throw new ForbiddenError("Forbidden: Organization membership required");
+  }
+
   if (meetingId && !isValidObjectId(meetingId)) {
     throw new ValidationError("Invalid meeting ID");
   }
@@ -258,17 +264,28 @@ export const generateMeetingMoM = async (
   let textToSummarize = (transcript || "").trim();
   let meeting = null;
 
-  if (meetingId && !textToSummarize) {
+  if (meetingId) {
     meeting = await MeetingStorageService.findMeetingById(meetingId);
     if (!meeting) throw new NotFoundError("Meeting not found");
-    textToSummarize = (meeting.transcript || "").trim();
+
+    const hasAccess =
+      (meeting.organization && meeting.organization.toString() === user.organization.toString()) ||
+      (meeting.uploadedBy && meeting.uploadedBy.toString() === userId.toString());
+
+    if (!hasAccess) {
+      throw new ForbiddenError("Forbidden: You do not have access to this meeting");
+    }
+
+    if (!textToSummarize) {
+      textToSummarize = (meeting.transcript || "").trim();
+    }
   }
 
   if (!textToSummarize) {
     throw new ValidationError("No transcript provided.");
   }
 
-  if (aiQueue) {
+  if (aiQueue && aiQueue.isActive) {
     console.log(
       `🚀 Queueing MoM generation job for ${meetingId || "transcript-only"}...`,
     );
@@ -299,6 +316,7 @@ export const generateMeetingMoM = async (
   if (!meetingToUpdate && !meetingId) {
     meetingToUpdate = await MeetingStorageService.createMeetingRecord({
       uploadedBy: userId,
+      organization: user.organization,
       title: mom.title,
       date: new Date(date),
       transcript: textToSummarize,
@@ -501,7 +519,11 @@ export const deleteMeeting = async (doc, meetingId) => {
   }
 };
 
-export const searchMeetings = async ({ query, audioUrl }) => {
+export const searchMeetings = async (
+  { query, audioUrl },
+  orgId = null,
+  userId = null,
+) => {
   let searchQuery = (query || "").trim();
 
   if (audioUrl && !searchQuery) {
@@ -515,8 +537,19 @@ export const searchMeetings = async ({ query, audioUrl }) => {
   }
 
   console.log(`🔍 Searching meetings for: "${searchQuery}"`);
+
+  const filter = {};
+  if (orgId || userId) {
+    const queryOptions = [];
+    if (orgId) queryOptions.push({ organization: orgId });
+    if (userId) queryOptions.push({ uploadedBy: userId });
+    if (queryOptions.length > 0) {
+      filter.$or = queryOptions;
+    }
+  }
+
   const results =
-    await MeetingStorageService.searchMeetingsRecords(searchQuery);
+    await MeetingStorageService.searchMeetingsRecords(searchQuery, filter);
 
   return { query: searchQuery, count: results.length, results };
 };
