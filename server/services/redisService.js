@@ -82,7 +82,7 @@ export const acquireLock = async (lockKey, ttlMs = 5000) => {
     const res = await client.set(lockKey, lockToken, { NX: true, PX: ttlMs });
     return res === "OK" ? lockToken : null;
   } catch (err) {
-    console.error(`⚠️ acquireLock error for ${lockKey}:`, err.message);
+    console.error("⚠️ acquireLock error:", lockKey, err.message);
     return null;
   }
 };
@@ -112,7 +112,7 @@ export const releaseLock = async (lockKey, lockToken) => {
     }
     return true;
   } catch (err) {
-    console.error(`⚠️ releaseLock error for ${lockKey}:`, err.message);
+    console.error("⚠️ releaseLock error:", lockKey, err.message);
     return false;
   }
 };
@@ -141,7 +141,7 @@ export const setSearchCache = async (
     await client.expire(setKey, 86400).catch(() => {});
     return true;
   } catch (err) {
-    console.error(`⚠️ setSearchCache error for ${cacheKey}:`, err.message);
+    console.error("⚠️ setSearchCache error:", cacheKey, err.message);
     return false;
   }
 };
@@ -156,7 +156,7 @@ export const addKeyToOrgSet = async (organizationId = "global", cacheKey) => {
     await client.expire(setKey, 86400).catch(() => {});
     return true;
   } catch (err) {
-    console.error(`⚠️ addKeyToOrgSet error:`, err.message);
+    console.error("⚠️ addKeyToOrgSet error:", cacheKey, err.message);
     return false;
   }
 };
@@ -169,7 +169,7 @@ export const getOrgKeys = async (organizationId = "global") => {
     const setKey = `org:${orgId}:search_keys`;
     return await client.sMembers(setKey);
   } catch (err) {
-    console.error(`⚠️ getOrgKeys error:`, err.message);
+    console.error("⚠️ getOrgKeys error:", organizationId, err.message);
     return [];
   }
 };
@@ -209,7 +209,7 @@ export const clearOrgSetAndKeys = async (organizationId = "global") => {
       return deletedCount;
     }
   } catch (err) {
-    console.error(`⚠️ clearOrgSetAndKeys error:`, err.message);
+    console.error("⚠️ clearOrgSetAndKeys error:", organizationId, err.message);
     return 0;
   }
 };
