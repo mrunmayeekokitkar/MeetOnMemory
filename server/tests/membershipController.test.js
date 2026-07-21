@@ -10,7 +10,6 @@ describe("MembershipController - removeMembership", () => {
   let adminUser;
   let adminToken;
   let memberUser;
-  let memberToken;
   let organization;
   let memberMembership;
 
@@ -52,10 +51,6 @@ describe("MembershipController - removeMembership", () => {
       role: "member",
       isAccountVerified: true,
     });
-    memberToken = jwt.sign(
-      { id: memberUser._id },
-      process.env.JWT_SECRET || "fallback_secret",
-    );
 
     memberMembership = await Membership.create({
       user: memberUser._id,
@@ -74,7 +69,7 @@ describe("MembershipController - removeMembership", () => {
 
   it("should clear organization and role on the removed user when admin removes a member", async () => {
     const res = await request(app)
-      .delete(`/api/memberships/${memberMembership._id}`)
+      .delete(`/api/membership/${memberMembership._id}`)
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toEqual(200);
@@ -87,7 +82,7 @@ describe("MembershipController - removeMembership", () => {
 
   it("should not alter admin user's own organization/role when admin removes a member", async () => {
     await request(app)
-      .delete(`/api/memberships/${memberMembership._id}`)
+      .delete(`/api/membership/${memberMembership._id}`)
       .set("Authorization", `Bearer ${adminToken}`);
 
     const updatedAdmin = await User.findById(adminUser._id);
@@ -109,7 +104,7 @@ describe("MembershipController - removeMembership", () => {
     await memberUser.save();
 
     const res = await request(app)
-      .delete(`/api/memberships/${memberMembership._id}`)
+      .delete(`/api/membership/${memberMembership._id}`)
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toEqual(200);
@@ -141,7 +136,7 @@ describe("MembershipController - removeMembership", () => {
     });
 
     const res = await request(app)
-      .delete(`/api/memberships/${memberMembership._id}`)
+      .delete(`/api/membership/${memberMembership._id}`)
       .set("Authorization", `Bearer ${otherToken}`);
 
     expect(res.statusCode).toEqual(403);

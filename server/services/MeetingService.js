@@ -122,7 +122,11 @@ export const createMeeting = async (uploaderId, orgId, data, io) => {
   );
 
   if (orgId && io) {
-    Membership.find({ organization: orgId, status: "active", user: { $ne: uploaderId } })
+    Membership.find({
+      organization: orgId,
+      status: "active",
+      user: { $ne: uploaderId },
+    })
       .populate("user")
       .then(async (memberships) => {
         for (const membership of memberships) {
@@ -271,11 +275,15 @@ export const generateMeetingMoM = async (
     if (!meeting) throw new NotFoundError("Meeting not found");
 
     const hasAccess =
-      (meeting.organization && meeting.organization.toString() === user.organization.toString()) ||
-      (meeting.uploadedBy && meeting.uploadedBy.toString() === userId.toString());
+      (meeting.organization &&
+        meeting.organization.toString() === user.organization.toString()) ||
+      (meeting.uploadedBy &&
+        meeting.uploadedBy.toString() === userId.toString());
 
     if (!hasAccess) {
-      throw new ForbiddenError("Forbidden: You do not have access to this meeting");
+      throw new ForbiddenError(
+        "Forbidden: You do not have access to this meeting",
+      );
     }
 
     if (!textToSummarize) {
@@ -291,13 +299,23 @@ export const generateMeetingMoM = async (
     console.log(
       `🚀 Queueing MoM generation job for ${meetingId || "transcript-only"}...`,
     );
-    await aiQueue.add("generate-mom", {
-      meetingId,
-      transcript: textToSummarize,
-      date,
-      title,
-      userId,
-    });
+    await aiQueue.add(
+      "generate-mom",
+      {
+        meetingId,
+        transcript: textToSummarize,
+        date,
+        title,
+        userId,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 5000, // Wait 5s, then 10s on retries
+        },
+      },
+    );
     return { queued: true };
   }
 
@@ -369,7 +387,13 @@ export const generateMeetingMoM = async (
 };
 
 export const getAllMeetings = async (userId, orgId, queryParams = {}) => {
-  const { page = 1, limit = 10, startDate, endDate, includeArchived } = queryParams;
+  const {
+    page = 1,
+    limit = 10,
+    startDate,
+    endDate,
+    includeArchived,
+  } = queryParams;
 
   const queryOptions = [{ uploadedBy: userId }];
   if (orgId) {
@@ -582,8 +606,10 @@ export const searchMeetings = async (
     }
   }
 
-  const results =
-    await MeetingStorageService.searchMeetingsRecords(searchQuery, filter);
+  const results = await MeetingStorageService.searchMeetingsRecords(
+    searchQuery,
+    filter,
+  );
 
   return { query: searchQuery, count: results.length, results };
 };
