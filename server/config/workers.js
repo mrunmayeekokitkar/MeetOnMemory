@@ -23,4 +23,10 @@ export function startWorkers(app) {
   safeInit("Data Export Worker", () => initDataExportWorker(app));
   safeInit("Conflict Scan Worker", () => initConflictScanWorker(app));
   safeInit("Webhook Worker", () => initWebhookWorker());
+
+  import("../utils/embeddingUtils.js")
+    .then(({ preWarmPinecone }) => {
+      safeInit("Pinecone DB", () => preWarmPinecone());
+    })
+    .catch(() => {});
 }
