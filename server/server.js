@@ -1,9 +1,8 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import { Server } from "socket.io";
 import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import connectDB from "./config/mongodb.js";
 
@@ -27,6 +26,10 @@ import webhookRoutes from "./routes/webhookRoutes.js";
 import slackRoutes from "./routes/slackRoutes.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import transcriptRoutes from "./routes/transcriptRoutes.js";
+import { configureExpress, configureErrorHandling } from "./config/express.js";
+import { configureSocket } from "./config/socket.js";
+import { startWorkers } from "./config/workers.js";
+import routes from "./routes/index.js";
 
 // Import slackService, cacheInvalidationService, and conflictScanTrigger to register eventBus listeners.
 import "./services/slackService.js";
@@ -64,7 +67,6 @@ dotenv.config({ path: envPath });
 dotenv.config();
 
 const app = express();
-app.set("trust proxy", 1); // Trust first proxy hop (Render, Vercel)
 const PORT = process.env.PORT || 4000;
 
 if (!process.env.JWT_SECRET) {
@@ -75,29 +77,8 @@ if (!process.env.JWT_SECRET) {
 // DATABASE & CACHE
 await connectDB();
 
-import { corsOptions, allowedOrigins } from "./config/corsOptions.js";
-import {
-  csrfMiddleware,
-  csrfTokenProvider,
-} from "./middleware/csrfProtection.js";
-
-// MIDDLEWARES
-app.use(cors(corsOptions));
-
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(cookieParser());
-
-// Enforce CSRF protection on mutation routes
-app.use(csrfMiddleware);
-
-// CSRF token provider
-app.get("/api/csrf-token", csrfTokenProvider, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-
-// VECTOR DB WARMUP
-// (Pre-warming moved to server.listen callback for lazy background startup)
+// EXPRESS CONFIGURATION
+configureExpress(app);
 
 // ROUTES
 app.use("/api/auth", authRoutes);
@@ -133,35 +114,24 @@ app.get(["/health", "/api/health"], (req, res) => {
     env: process.env.NODE_ENV,
   });
 });
+app.use(routes);
 
-// GLOBAL RATE LIMITER
-app.use(globalLimiter);
+// ERROR HANDLING (Must be after routes)
+configureErrorHandling(app);
 
 const server = http.createServer(app);
+
+// SOCKET.IO
+configureSocket(server, app);
 
 // SERVER START (Skipped during Jest test execution)
 if (process.env.NODE_ENV !== "test") {
   server.listen(PORT, () => {
     console.log(`🚀 MeetOnMemory Server running on port ${PORT}`);
 
-    (globalThis.setImmediate || setTimeout)(() => {
-      const safeInit = async (name, initFn) => {
-        try {
-          await initFn();
-        } catch (err) {
-          console.error(
-            `⚠️ Failed to initialize background service "${name}":`,
-            err.message || err,
-          );
-        }
-      };
-
-      safeInit("Redis", () => initRedis());
-      safeInit("AI Worker", () => initAIWorker(app));
-      safeInit("Data Export Worker", () => initDataExportWorker(app));
-      safeInit("Conflict Scan Worker", () => initConflictScanWorker(app));
-      safeInit("Webhook Worker", () => initWebhookWorker());
-    });
+    setTimeout(() => {
+      startWorkers(app);
+    }, 0);
   });
 }
 
