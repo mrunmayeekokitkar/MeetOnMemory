@@ -11,12 +11,10 @@ jest.unstable_mockModule("../models/membershipModel.js", () => ({
 }));
 
 jest.unstable_mockModule("../models/meetingModel.js", () => ({
-  default: {
-    find: jest.fn(),
-  },
+  default: {},
 }));
-describe("aiRoutes", () => {
-  it("should have tests", () => {
+describe("aiRoutes tests", () => {
+  it("should have at least one test", () => {
     expect(true).toBe(true);
   });
 });
