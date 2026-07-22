@@ -121,10 +121,17 @@ export const createMeeting = async (uploaderId, orgId, data) => {
   );
 
   if (orgId) {
-    Membership.find({ organization: orgId, status: "active", user: { $ne: uploaderId } })
+    Membership.find({
+      organization: orgId,
+      status: "active",
+      user: { $ne: uploaderId },
+    })
       .populate("user")
       .then(async (memberships) => {
-        eventBus.emit("meeting.created", { meeting, membersToNotify: memberships });
+        eventBus.emit("meeting.created", {
+          meeting,
+          membersToNotify: memberships,
+        });
       })
       .catch((err) =>
         console.error("⚠️ Notification error (continuing):", err.message),
@@ -259,11 +266,15 @@ export const generateMeetingMoM = async (
     if (!meeting) throw new NotFoundError("Meeting not found");
 
     const hasAccess =
-      (meeting.organization && meeting.organization.toString() === user.organization.toString()) ||
-      (meeting.uploadedBy && meeting.uploadedBy.toString() === userId.toString());
+      (meeting.organization &&
+        meeting.organization.toString() === user.organization.toString()) ||
+      (meeting.uploadedBy &&
+        meeting.uploadedBy.toString() === userId.toString());
 
     if (!hasAccess) {
-      throw new ForbiddenError("Forbidden: You do not have access to this meeting");
+      throw new ForbiddenError(
+        "Forbidden: You do not have access to this meeting",
+      );
     }
 
     if (!textToSummarize) {
@@ -326,7 +337,11 @@ export const generateMeetingMoM = async (
   console.log("✅ MoM saved to database");
 
   try {
-    if (!meetingId) eventBus.emit("meeting.created", { meeting: meetingToUpdate, membersToNotify: [] }); // Or we could pass actual members, but here it's an ad-hoc meeting
+    if (!meetingId)
+      eventBus.emit("meeting.created", {
+        meeting: meetingToUpdate,
+        membersToNotify: [],
+      }); // Or we could pass actual members, but here it's an ad-hoc meeting
     eventBus.emit("mom.generated", meetingToUpdate);
   } catch (evtErr) {
     console.error("⚠️ Failed to emit webhook events:", evtErr.message);
@@ -343,7 +358,13 @@ export const generateMeetingMoM = async (
 };
 
 export const getAllMeetings = async (userId, orgId, queryParams = {}) => {
-  const { page = 1, limit = 10, startDate, endDate } = queryParams;
+  const {
+    page = 1,
+    limit = 10,
+    startDate,
+    endDate,
+    includeArchived,
+  } = queryParams;
 
   const queryOptions = [{ uploadedBy: userId }];
   if (orgId) {
@@ -351,6 +372,10 @@ export const getAllMeetings = async (userId, orgId, queryParams = {}) => {
   }
 
   const query = { $or: queryOptions };
+
+  if (!includeArchived) {
+    query.archived = { $ne: true };
+  }
 
   if (startDate || endDate) {
     query.date = {};
@@ -495,6 +520,34 @@ export const deleteMeeting = async (doc, meetingId) => {
   }
 };
 
+export const archiveMeeting = async (meetingId) => {
+  if (!isValidObjectId(meetingId)) {
+    throw new ValidationError("Invalid meeting ID");
+  }
+
+  const meeting = await MeetingStorageService.findMeetingById(meetingId);
+  if (!meeting) throw new NotFoundError("Meeting not found");
+
+  meeting.archived = true;
+  await meeting.save();
+
+  return meeting;
+};
+
+export const restoreMeeting = async (meetingId) => {
+  if (!isValidObjectId(meetingId)) {
+    throw new ValidationError("Invalid meeting ID");
+  }
+
+  const meeting = await MeetingStorageService.findMeetingById(meetingId);
+  if (!meeting) throw new NotFoundError("Meeting not found");
+
+  meeting.archived = false;
+  await meeting.save();
+
+  return meeting;
+};
+
 export const searchMeetings = async (
   { query, audioUrl },
   orgId = null,
@@ -524,8 +577,10 @@ export const searchMeetings = async (
     }
   }
 
-  const results =
-    await MeetingStorageService.searchMeetingsRecords(searchQuery, filter);
+  const results = await MeetingStorageService.searchMeetingsRecords(
+    searchQuery,
+    filter,
+  );
 
   return { query: searchQuery, count: results.length, results };
 };

@@ -4,6 +4,7 @@
 // All business logic lives in server/services/OrganizationService.js.
 
 import * as OrganizationService from "../services/OrganizationService.js";
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 /**
  * ✅ Create or Join Organization
@@ -17,9 +18,7 @@ export const createOrJoinOrganization = async (req, res) => {
 
     // Validate authentication
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     // Validate org name
@@ -35,12 +34,10 @@ export const createOrJoinOrganization = async (req, res) => {
       name.trim(),
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error creating/joining organization:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -51,12 +48,10 @@ export const createOrJoinOrganization = async (req, res) => {
 export const getAllOrganizations = async (req, res) => {
   try {
     const result = await OrganizationService.getAllOrganizations();
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching organizations:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -67,9 +62,7 @@ export const getAllOrganizations = async (req, res) => {
 export const joinOrganization = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.joinOrganizationById(
@@ -77,12 +70,10 @@ export const joinOrganization = async (req, res) => {
       req.body.organizationId,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error joining organization by ID:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -93,9 +84,7 @@ export const joinOrganization = async (req, res) => {
 export const selectOrganization = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.selectOrganization(
@@ -103,12 +92,10 @@ export const selectOrganization = async (req, res) => {
       req.body.organizationId,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error selecting organization:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -119,21 +106,17 @@ export const selectOrganization = async (req, res) => {
 export const getOrganizationMembers = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.getOrganizationMembers(
       req.user.id,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching organization members:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -148,12 +131,14 @@ export const getPublicOrganizationBySlug = async (req, res) => {
       req.params.slug,
     );
 
-    return res.status(200).json(result);
+    return sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching public organization:", error);
-    return res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    return sendError(
+      res,
+      error.statusCode || 500,
+      error.message || "Server error",
+    );
   }
 };
 
@@ -185,12 +170,14 @@ export const browsePublicOrganizations = async (req, res) => {
       filter,
     });
 
-    return res.status(200).json(result);
+    return sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error browsing public organizations:", error);
-    return res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    return sendError(
+      res,
+      error.statusCode || 500,
+      error.message || "Server error",
+    );
   }
 };
 
@@ -233,12 +220,10 @@ export const searchOrganizations = async (req, res) => {
       limit,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error searching organizations:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -249,19 +234,15 @@ export const searchOrganizations = async (req, res) => {
 export const getUserOrganizations = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.getUserOrganizations(req.user.id);
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching user organizations:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -272,9 +253,7 @@ export const getUserOrganizations = async (req, res) => {
 export const createOrganization = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.createOrganization(
@@ -282,17 +261,13 @@ export const createOrganization = async (req, res) => {
       req.body,
     );
 
-    res.status(201).json(result);
+    sendSuccess(res, result, null, 201);
   } catch (error) {
     console.error("❌ Error creating organization:", error);
     if (error.code === 11000) {
-      return res
-        .status(409)
-        .json({ success: false, message: "Organization slug already exists." });
+      return sendError(res, 409, "Organization slug already exists.");
     }
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -310,12 +285,10 @@ export const getOrganizations = async (req, res) => {
       limit,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching organizations:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -329,12 +302,10 @@ export const getOrganizationById = async (req, res) => {
       req.params.idOrSlug,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching organization:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -345,9 +316,7 @@ export const getOrganizationById = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.updateOrganization(
@@ -356,12 +325,10 @@ export const updateOrganization = async (req, res) => {
       req.body,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error updating organization:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -372,9 +339,7 @@ export const updateOrganization = async (req, res) => {
 export const deleteOrganization = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.deleteOrganization(
@@ -382,12 +347,10 @@ export const deleteOrganization = async (req, res) => {
       req.params.id,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error deleting organization:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };
 
@@ -398,9 +361,7 @@ export const deleteOrganization = async (req, res) => {
 export const getOrganizationMembersById = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+      return sendError(res, 401, "Authentication failed.");
     }
 
     const result = await OrganizationService.getOrganizationMembersById(
@@ -408,11 +369,9 @@ export const getOrganizationMembersById = async (req, res) => {
       req.params.id,
     );
 
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     console.error("❌ Error fetching organization members:", error);
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, message: error.message || "Server error" });
+    sendError(res, error.statusCode || 500, error.message || "Server error");
   }
 };

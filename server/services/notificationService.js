@@ -1,4 +1,30 @@
 import notificationModel from "../models/notificationModel.js";
+import NotificationPreference from "../models/notificationPreferenceModel.js";
+
+const categoryToPreferenceField = {
+  meetings: "pushMeetingReminders",
+  ai_processing: "pushAiProcessingComplete",
+  system: null,
+  organizations: null,
+  policies: null,
+  reports: null,
+};
+
+/**
+ * Checks whether a given user has opted out of push notifications for a category.
+ */
+const shouldSuppressPush = async (userId, category) => {
+  const field = categoryToPreferenceField[category];
+  if (!field) return false;
+
+  try {
+    const prefs = await NotificationPreference.findOne({ user: userId });
+    if (!prefs) return false;
+    return prefs[field] === false;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Creates a notification in the database
@@ -21,6 +47,14 @@ export const createNotification = async (
   metadata = {},
 ) => {
   try {
+    const suppressed = await shouldSuppressPush(userId, category);
+    if (suppressed) {
+      console.log(
+        `🔇 Notification suppressed for user ${userId} — category "${category}" disabled in preferences`,
+      );
+      return null;
+    }
+
     // 1. Create notification in database
     const notification = await notificationModel.create({
       user: userId,

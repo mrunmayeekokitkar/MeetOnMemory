@@ -11,8 +11,7 @@ jest.unstable_mockModule("../models/membershipModel.js", () => ({
 }));
 
 jest.unstable_mockModule("../models/meetingModel.js", () => ({
-  default: {
-  },
+  default: {},
 }));
 
 describe("aiRoutes tests", () => {
