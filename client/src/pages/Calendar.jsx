@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
@@ -19,7 +18,6 @@ import {
 
 const Calendar = () => {
   const navigate = useNavigate();
-  const { backendUrl } = useContext(AppContent);
 
   const {
     loading,
@@ -35,66 +33,11 @@ const Calendar = () => {
     setTypeFilter,
     orgFilter,
     setOrgFilter,
+    showExternalEvents,
+    setShowExternalEvents,
     filteredMeetings,
     uniqueOrgs,
   } = useCalendarEvents();
-
-
-  const [showExternalEvents, setShowExternalEvents] = useState(true);
-
-  // Fetch external calendar events
-  useEffect(() => {
-    const fetchExternalEvents = async () => {
-      if (!showExternalEvents) return;
-
-      try {
-        const { data } = await meetingApi.getAllMeetings();
-        let internalMeetings = [];
-        if (data.success) {
-          internalMeetings = data.meetings || [];
-        } else {
-          toast.error(data.message || "Failed to fetch meetings.");
-        }
-
-        // Fetch external events
-        try {
-          const { data: extData } = await axios.get(
-            `${backendUrl || "http://localhost:4000"}/api/calendar/events`,
-            { withCredentials: true },
-          );
-          if (extData.success && extData.events) {
-            const externalEvents = extData.events.map((e) => ({
-              _id: e.id,
-              title: e.title,
-              date: new Date(e.start),
-              time: new Date(e.start).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              duration: (new Date(e.end) - new Date(e.start)) / 60000,
-              venue: e.location,
-              meetingType: "external",
-              status: "upcoming",
-              provider: e.provider,
-              isExternal: true,
-            }));
-            internalMeetings = [...internalMeetings, ...externalEvents];
-          }
-        } catch (extErr) {
-          console.error("External events fetch err:", extErr);
-        }
-
-        setMeetings(internalMeetings);
-      } catch (err) {
-        console.error("Fetch meetings error:", err);
-        toast.error("Error loading calendar data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExternalEvents();
-  }, [currentDate, showExternalEvents]);
 
   // Handle outside click to close modal
   useEffect(() => {
