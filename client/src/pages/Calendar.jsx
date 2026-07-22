@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../components/Navbar.jsx";
 import { useCalendarEvents } from "../hooks/useCalendarEvents";
 import CalendarGrid from "../components/calendar/CalendarGrid";
@@ -13,6 +14,7 @@ import {
   Plus,
   Loader2,
   Inbox,
+  Cloud,
 } from "lucide-react";
 
 const Calendar = () => {
@@ -35,6 +37,57 @@ const Calendar = () => {
     filteredMeetings,
     uniqueOrgs,
   } = useCalendarEvents();
+
+  const [_externalEvents, setExternalEvents] = useState({ google: [], microsoft: [] });
+  const [showExternalEvents, setShowExternalEvents] = useState(true);
+
+  // Fetch external calendar events
+  useEffect(() => {
+    const fetchExternalEvents = async () => {
+      if (!showExternalEvents) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        
+        // Calculate date range for current view
+        const timeMin = new Date(currentDate);
+        timeMin.setDate(1); // Start of month
+        timeMin.setHours(0, 0, 0, 0);
+        
+        const timeMax = new Date(currentDate);
+        timeMax.setMonth(timeMax.getMonth() + 1);
+        timeMax.setDate(0); // End of month
+        timeMax.setHours(23, 59, 59, 999);
+
+        const response = await axios.get("/api/calendar/external-events", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            timeMin: timeMin.toISOString(),
+            timeMax: timeMax.toISOString(),
+          },
+        });
+
+        if (response.data.success) {
+          setExternalEvents(response.data.events);
+        }
+      } catch (error) {
+        console.error("Error fetching external events:", error);
+      }
+    };
+
+    fetchExternalEvents();
+  }, [currentDate, showExternalEvents]);
+
+  // Handle outside click to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSelectedMeeting(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setSelectedMeeting]);
 
   // Navigation helpers
   const handlePrev = () => {
@@ -186,6 +239,19 @@ const Calendar = () => {
               <Filter className="w-3.5 h-3.5 text-slate-400" />
               <span>Filters:</span>
             </div>
+
+            {/* External events toggle */}
+            <button
+              onClick={() => setShowExternalEvents(!showExternalEvents)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                showExternalEvents
+                  ? "bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300"
+                  : "bg-slate-50 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>External Events</span>
+            </button>
 
             {/* Date filter (Jump to Date) */}
             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-300 select-none">

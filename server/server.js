@@ -5,6 +5,27 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import connectDB from "./config/mongodb.js";
+
+import authRoutes from "./routes/authRoutes.js";
+import organizationRoutes from "./routes/organizationRoutes.js";
+import membershipRoutes from "./routes/membershipRoutes.js";
+import membershipRequestRoutes from "./routes/membershipRequestRoutes.js";
+import invitationRoutes from "./routes/invitationRoutes.js";
+import meetingRoutes from "./routes/meetingRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
+import policyRoutes from "./routes/policyRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import geminiRoutes from "./routes/geminiRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import knowledgeRoutes from "./routes/knowledgeRoutes.js";
+import policyComplianceRoutes from "./routes/policyComplianceRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
+import slackRoutes from "./routes/slackRoutes.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
+import transcriptRoutes from "./routes/transcriptRoutes.js";
 import { configureExpress, configureErrorHandling } from "./config/express.js";
 import { configureSocket } from "./config/socket.js";
 import { startWorkers } from "./config/workers.js";
@@ -17,6 +38,25 @@ import "./services/cacheInvalidationService.js";
 // listener, which enqueues a background contradiction scan per
 // organization whenever new decisions/action items are extracted.
 import "./services/conflictScanTrigger.js";
+
+import meetingSocket from "./socket/meetingSocket.js";
+import documentSync from "./socket/documentSync.js";
+import transcriptSocket from "./socket/transcriptSocket.js";
+import { initRedis, getRedisClient } from "./services/redisService.js";
+import { initRedis } from "./services/redisService.js";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { startCalendarSyncJob } from "./jobs/calendarSyncJob.js";
+import { createClient } from "redis";
+import {
+  initAIWorker,
+  initDataExportWorker,
+  initConflictScanWorker,
+} from "./services/queueService.js";
+import { initWebhookWorker } from "./services/webhookDispatcherService.js";
+import { globalLimiter } from "./middleware/rateLimiter.js";
+import errorHandler from "./middleware/errorHandler.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +81,39 @@ await connectDB();
 configureExpress(app);
 
 // ROUTES
+app.use("/api/auth", authRoutes);
+app.use(["/api/organization", "/api/organizations"], organizationRoutes);
+app.use(["/api/membership", "/api/memberships"], membershipRoutes);
+app.use("/api/membership-request", membershipRequestRoutes);
+app.use("/api/invitation", invitationRoutes);
+app.use("/api/meetings", meetingRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/policies", policyRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/gemini", geminiRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/knowledge", knowledgeRoutes);
+app.use("/api/compliance", policyComplianceRoutes);
+import { slackWebhookParser } from "./middleware/slackWebhookParser.js";
+
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/webhooks", webhookRoutes);
+app.use("/api/slack", slackWebhookParser, slackRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use("/api", transcriptRoutes);
+app.use("/api/transcripts", transcriptRoutes);
+
+// Health check endpoint — registered BEFORE the global rate limiter so
+// keep-alive pings (e.g. from GitHub Actions cron job) are never blocked.
+app.get(["/health", "/api/health"], (req, res) => {
+  res.status(200).json({
+    status: "UP",
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+  });
+});
 app.use(routes);
 
 // ERROR HANDLING (Must be after routes)
@@ -61,6 +134,64 @@ if (process.env.NODE_ENV !== "test") {
     }, 0);
   });
 }
+
+// SOCKET.IO
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
+
+app.set("io", io);
+
+// REDIS PUB/SUB ADAPTER (Horizontal Scaling)
+// Enables collaborative editing to work across multiple server instances.
+// Gracefully skips if Redis is not configured.
+(async () => {
+  const redisUri = process.env.REDIS_URI || process.env.REDIS_URL;
+  if (redisUri) {
+    try {
+      const pubClient = createClient({ url: redisUri });
+      const subClient = pubClient.duplicate();
+
+      pubClient.on("error", (err) => {
+        console.error("❌ Redis PubClient Error:", err.message);
+      });
+      subClient.on("error", (err) => {
+        console.error("❌ Redis SubClient Error:", err.message);
+      });
+
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log(
+        "✅ Socket.io Redis Pub/Sub adapter attached (horizontal scaling enabled)",
+      );
+    } catch (err) {
+      console.warn(
+        "⚠️  Redis adapter failed — running in single-instance mode:",
+        err.message,
+      );
+    }
+  } else {
+    console.log(
+      "ℹ️  No REDIS_URI/REDIS_URL set — Socket.io running in single-instance mode",
+    );
+  }
+})();
+
+meetingSocket(io);
+documentSync(io);
+transcriptSocket(io);
+
+// Start calendar sync job
+startCalendarSyncJob();
+
+// (AI, Data Export, and Webhook workers are initialized inside server.listen callback)
+
+// ERROR HANDLER
+app.use(errorHandler);
 
 // GRACEFUL SHUTDOWN
 process.on("SIGTERM", () => {
