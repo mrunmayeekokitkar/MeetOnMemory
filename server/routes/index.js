@@ -15,33 +15,12 @@ import notificationRoutes from "./notificationRoutes.js";
 import knowledgeRoutes from "./knowledgeRoutes.js";
 import policyComplianceRoutes from "./policyComplianceRoutes.js";
 import sessionRoutes from "./sessionRoutes.js";
-import webhookRoutes from "./webhookRoutes.js";
-import slackRoutes from "./slackRoutes.js";
 import transcriptRoutes from "./transcriptRoutes.js";
-import { slackWebhookParser } from "../middleware/slackWebhookParser.js";
-import {
-  csrfProtectionMiddleware,
-  csrfErrorHandler,
-} from "../middleware/csrfProtection.js";
 
 const router = express.Router();
 
 // ==========================================
-// 1. BYPASSED ROUTES (No CSRF Protection)
-//    External services authenticate via their own
-//    signature/secret mechanisms, not browser cookies.
-// ==========================================
-router.use("/api/slack", slackWebhookParser, slackRoutes);
-router.use("/api/webhooks", webhookRoutes);
-
-// ==========================================
-// 2. CSRF MIDDLEWARE (All routes below are protected)
-// ==========================================
-router.use(csrfProtectionMiddleware);
-router.use(csrfErrorHandler);
-
-// ==========================================
-// 3. ALL PROTECTED ROUTES (CSRF Enforced)
+// ALL PROTECTED ROUTES (CSRF Enforced globally in express.js)
 // ==========================================
 router.use("/api/auth", authRoutes);
 router.use(["/api/organization", "/api/organizations"], organizationRoutes);
